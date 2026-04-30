@@ -61,7 +61,7 @@ export const Hero = () => {
                 <ChevronRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>
-            <Link href="/register?role=teacher">
+            <Link href="/join-teacher">
               <Button size="lg" variant="outline" className="w-full sm:w-auto border-border hover:bg-bg-surface text-text-primary rounded-full px-8 sm:px-10 h-14 text-base sm:text-lg font-bold">
                 শিক্ষক হিসেবে যোগ দাও
               </Button>

@@ -44,8 +44,8 @@ export default function TeacherDashboard() {
             <p className="text-text-secondary mt-1">আপনার কন্টেন্ট এবং শিক্ষার্থীদের পারফরম্যান্স পরিচালনা করুন।</p>
           </div>
           <div className="flex gap-3">
-            <Button className="bg-primary hover:bg-primary-light text-white rounded-xl h-11" asChild>
-              <Link href="/teacher/create-exam"><PlusCircle className="w-4 h-4 mr-2" /> নতুন Exam</Link>
+            <Button className="bg-primary hover:bg-primary-light text-white rounded-xl h-11" render={<Link href="/teacher/create-exam" />}>
+              <PlusCircle className="w-4 h-4 mr-2" /> নতুন Exam
             </Button>
           </div>
         </div>
@@ -109,8 +109,8 @@ export default function TeacherDashboard() {
         <Card className="border-border bg-bg-card/50 overflow-hidden">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-xl font-bold">Recent Exam Performance</CardTitle>
-            <Button variant="ghost" size="sm" className="text-primary" asChild>
-              <Link href="/teacher/analytics">সব দেখুন <ArrowRight className="ml-1 w-4 h-4" /></Link>
+            <Button variant="ghost" size="sm" className="text-primary" render={<Link href="/teacher/analytics" />}>
+              সব দেখুন <ArrowRight className="ml-1 w-4 h-4" />
             </Button>
           </CardHeader>
           <CardContent className="p-0 overflow-x-auto">

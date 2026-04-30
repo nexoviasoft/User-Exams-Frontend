@@ -35,8 +35,8 @@ export default function TeacherExamsPage() {
             <h1 className="text-3xl font-display font-bold tracking-tight">আমার Exams 📋</h1>
             <p className="text-text-secondary mt-1">আপনার তৈরি করা সব পরীক্ষা এখানে ম্যানেজ করুন।</p>
           </div>
-          <Button className="bg-primary hover:bg-primary-light text-white rounded-xl h-12 px-6 font-bold" asChild>
-            <Link href="/teacher/create-exam"><PlusCircle className="w-5 h-5 mr-2" /> নতুন Exam তৈরি</Link>
+          <Button className="bg-primary hover:bg-primary-light text-white rounded-xl h-12 px-6 font-bold" render={<Link href="/teacher/create-exam" />}>
+            <PlusCircle className="w-5 h-5 mr-2" /> নতুন Exam তৈরি
           </Button>
         </div>
 
@@ -110,8 +110,8 @@ export default function TeacherExamsPage() {
                              </Button>
                            </>
                          )}
-                         <Button variant="ghost" size="icon" className="text-text-secondary hover:text-accent rounded-lg" title="Analytics" asChild>
-                           <Link href={`/teacher/analytics?id=${exam.id}`}><BarChart3 className="w-4 h-4" /></Link>
+                         <Button variant="ghost" size="icon" className="text-text-secondary hover:text-accent rounded-lg" title="Analytics" render={<Link href={`/teacher/analytics?id=${exam.id}`} />}>
+                           <BarChart3 className="w-4 h-4" />
                          </Button>
                        </div>
                     </td>

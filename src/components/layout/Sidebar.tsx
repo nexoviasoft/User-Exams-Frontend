@@ -18,7 +18,8 @@ import {
   PieChart,
   Banknote,
   Database,
-  PlusCircle
+  PlusCircle,
+  UserPlus
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -47,7 +48,9 @@ export const Sidebar = ({ onAction }: { onAction?: () => void }) => {
     ],
     admin: [
       { name: 'Dashboard', icon: LayoutDashboard, path: '/admin/dashboard' },
+      { name: 'Candidate Types', icon: Database, path: '/admin/candidate-types' },
       { name: 'Payments', icon: CreditCard, path: '/admin/payments', badge: '3' },
+      { name: 'Teacher Requests', icon: UserPlus, path: '/admin/teacher-requests' },
       { name: 'Users', icon: Users, path: '/admin/users' },
       { name: 'All Exams', icon: FileText, path: '/admin/exams' },
       { name: 'Revenue', icon: Banknote, path: '/admin/revenue' },

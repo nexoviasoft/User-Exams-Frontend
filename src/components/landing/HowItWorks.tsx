@@ -1,7 +1,7 @@
 'use client';
 
 import { Step } from './Step';
-import { Database, Wallet, CheckCircle2 } from 'lucide-react';
+import { Wallet, Trophy, UserPlus } from 'lucide-react';
 
 export const HowItWorks = () => {
   return (
@@ -9,7 +9,7 @@ export const HowItWorks = () => {
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12 md:mb-20">
           <h2 className="text-3xl md:text-5xl font-display font-extrabold mb-3 md:mb-4 tracking-tight">How it works</h2>
-          <p className="text-text-secondary max-w-2xl mx-auto text-sm md:text-base">সহজ তিনটি ধাপে শুরু করুন আপনার পরীক্ষা যাত্রা</p>
+          <p className="text-text-secondary max-w-2xl mx-auto text-sm md:text-base">Start your exam journey in three easy steps.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-16 relative">
@@ -18,23 +18,23 @@ export const HowItWorks = () => {
           
           <Step 
             number="01" 
-            icon={Database} 
-            title="Create Exam" 
-            desc="Teacher creates QuestionBank and sets up the exam schedule." 
+            icon={UserPlus} 
+            title="Register & Select Goal" 
+            desc="Create your account and choose your target (e.g., DUET Admission, Job Prep)." 
             delay={0.1}
           />
           <Step 
             number="02" 
             icon={Wallet} 
-            title="Student Pays" 
-            desc="Student pays via bKash/Nagad to unlock the exam session." 
+            title="Choose Exam & Pay" 
+            desc="Select subjects or model tests specific to your goal and complete payment." 
             delay={0.2}
           />
           <Step 
             number="03" 
-            icon={CheckCircle2} 
-            title="Get Results" 
-            desc="Student gives exam and receives instant performance report." 
+            icon={Trophy} 
+            title="Participate & Track" 
+            desc="Give exams, get instant analytics, and track your leaderboard ranking." 
             delay={0.3}
           />
         </div>

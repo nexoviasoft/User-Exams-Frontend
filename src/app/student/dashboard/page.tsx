@@ -4,6 +4,7 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { 
   BookOpen, 
@@ -12,17 +13,30 @@ import {
   Zap, 
   ArrowRight,
   Clock,
-  ChevronRight
+  ChevronRight,
+  ShoppingBag,
+  FileBadge
 } from 'lucide-react';
 import Link from 'next/link';
+import { useQuery } from '@tanstack/react-query';
+import axiosInstance from '@/lib/axios';
 
 export default function StudentDashboard() {
   const { user } = useAuth();
 
+  const { data: purchaseStats } = useQuery({
+    queryKey: ['student-purchase-stats'],
+    queryFn: async () => {
+      const response = await axiosInstance.get('/payments/student/stats');
+      return response.data;
+    },
+    enabled: !!user,
+  });
+
   const stats = [
     { name: 'Total Exams Given', value: '12', icon: BookOpen, color: 'text-primary' },
-    { name: 'Average Score', value: '78%', icon: TrendingUp, color: 'text-success' },
-    { name: 'Best Score', value: '95%', icon: Trophy, color: 'text-accent' },
+    { name: 'Purchased Subjects', value: purchaseStats?.purchasedSubjects || '0', icon: ShoppingBag, color: 'text-success' },
+    { name: 'Purchased Exams/Models', value: purchaseStats?.purchasedExams || '0', icon: FileBadge, color: 'text-accent' },
     { name: 'Free Exams Remaining', value: '2', icon: Zap, color: 'text-warning', badge: '2 বাকি' },
   ];
 
@@ -76,8 +90,8 @@ export default function StudentDashboard() {
           <Card className="md:col-span-4 border-border bg-bg-card/50">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-xl font-bold">Recent Activity</CardTitle>
-              <Button variant="ghost" size="sm" className="text-primary" asChild>
-                <Link href="/student/history">সব দেখো <ArrowRight className="ml-1 w-4 h-4" /></Link>
+              <Button variant="ghost" size="sm" className="text-primary" render={<Link href="/student/history" />}>
+                সব দেখো <ArrowRight className="ml-1 w-4 h-4" />
               </Button>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -104,8 +118,8 @@ export default function StudentDashboard() {
           <Card className="md:col-span-3 border-border bg-bg-card/50">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-xl font-bold">Available Exams</CardTitle>
-              <Button variant="ghost" size="sm" className="text-primary" asChild>
-                <Link href="/student/exams">সব দেখো</Link>
+              <Button variant="ghost" size="sm" className="text-primary" render={<Link href="/student/exams" />}>
+                সব দেখো
               </Button>
             </CardHeader>
             <CardContent className="space-y-4">

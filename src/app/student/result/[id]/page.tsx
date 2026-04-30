@@ -11,35 +11,72 @@ import {
   MinusCircle, 
   Clock, 
   Share2, 
-  RotateCcw, 
-  LayoutDashboard 
+  LayoutDashboard,
+  Trophy,
+  Loader2,
+  HelpCircle,
+  ImageIcon
 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { useQuery } from '@tanstack/react-query';
+import axiosInstance from '@/lib/axios';
+import { useParams } from 'next/navigation';
+import Image from 'next/image';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts';
 
 export default function ResultPage() {
-  const score = 15;
-  const total = 20;
-  const percentage = (score / total) * 100;
-  const isPassed = percentage >= 40;
+  const params = useParams();
+  const id = params.id as string;
+
+  const { data: result, isLoading, error } = useQuery({
+    queryKey: ['exam-result', id],
+    queryFn: async () => {
+      const response = await axiosInstance.get(`/student-exams/result/${id}`);
+      return response.data;
+    },
+    enabled: !!id,
+  });
+
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex justify-center p-20">
+          <Loader2 className="w-12 h-12 animate-spin text-primary" />
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (error || !result) {
+    return (
+      <DashboardLayout>
+        <div className="flex justify-center p-20 text-danger font-bold">
+          Failed to load result.
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  const score = result.correct;
+  const total = result.totalQuestions;
+  const percentage = result.percentageScore;
+  const isPassed = result.isPassed !== null ? result.isPassed : percentage >= 40;
 
   const stats = [
-    { label: 'Correct', value: '15', icon: CheckCircle2, color: 'text-success' },
-    { label: 'Wrong', value: '3', icon: XCircle, color: 'text-danger' },
-    { label: 'Skipped', value: '2', icon: MinusCircle, color: 'text-text-secondary' },
-    { label: 'Time Taken', value: '12:45', icon: Clock, color: 'text-primary' },
+    { label: 'Correct', value: result.correct, icon: CheckCircle2, color: 'text-success' },
+    { label: 'Wrong', value: result.wrong, icon: XCircle, color: 'text-danger' },
+    { label: 'Time Taken', value: `${Math.floor(result.timeTakenSeconds / 60)}m ${result.timeTakenSeconds % 60}s`, icon: Clock, color: 'text-primary' },
   ];
 
-  const breakdown = [
-    { id: 1, question: "What is the capital of Bangladesh?", your: "Dhaka", correct: "Dhaka", status: "Correct" },
-    { id: 2, question: "Which language is primarily spoken in Bangladesh?", your: "Bengali", correct: "Bengali", status: "Correct" },
-    { id: 3, question: "When did Bangladesh gain independence?", your: "1952", correct: "1971", status: "Wrong" },
-    { id: 4, question: "What is the national fruit of Bangladesh?", your: "Jackfruit", correct: "Jackfruit", status: "Correct" },
+  const chartData = [
+    { name: 'Correct', value: result.correct, color: '#00A651' },
+    { name: 'Wrong', value: result.wrong, color: '#E53E3E' },
   ];
 
   return (
     <DashboardLayout>
-      <div className="max-w-4xl mx-auto space-y-12">
+      <div className="max-w-4xl mx-auto space-y-12 pb-20">
         {/* Animated Score Reveal */}
         <section className="flex flex-col items-center text-center space-y-6 py-8">
           <div className="relative w-64 h-64 flex items-center justify-center">
@@ -99,14 +136,14 @@ export default function ResultPage() {
             )}>
               {isPassed ? 'PASSED' : 'FAILED'}
             </Badge>
-            <h1 className="text-3xl font-display font-bold">Excellent Effort!</h1>
+            <h1 className="text-3xl font-display font-bold">{result.examTitle}</h1>
           </motion.div>
         </section>
 
         {/* Stats Row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="flex justify-center gap-4 flex-wrap">
           {stats.map((stat) => (
-            <Card key={stat.label} className="border-border bg-bg-card/50">
+            <Card key={stat.label} className="border-border bg-bg-card/50 min-w-[150px]">
               <CardContent className="pt-6 flex flex-col items-center text-center">
                 <stat.icon className={cn("w-6 h-6 mb-2", stat.color)} />
                 <div className="text-2xl font-bold">{stat.value}</div>
@@ -116,60 +153,114 @@ export default function ResultPage() {
           ))}
         </div>
 
-        {/* Breakdown Table */}
+        {/* Analytics Chart */}
+        <Card className="border-border bg-bg-card/50">
+          <CardHeader>
+            <CardTitle>Performance Chart</CardTitle>
+          </CardHeader>
+          <CardContent className="flex justify-center items-center h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={chartData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  {chartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <RechartsTooltip 
+                  contentStyle={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '8px' }}
+                  itemStyle={{ fontWeight: 'bold' }}
+                />
+                <Legend verticalAlign="bottom" height={36} />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Breakdown Table with Explanations */}
         <Card className="border-border bg-bg-card/50 overflow-hidden">
           <CardHeader>
-            <CardTitle>Question Breakdown</CardTitle>
+            <CardTitle>Question Breakdown & Solutions</CardTitle>
           </CardHeader>
           <CardContent className="p-0 overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-bg-surface text-text-secondary text-xs uppercase tracking-wider">
-                  <th className="px-6 py-4 font-bold">#</th>
-                  <th className="px-6 py-4 font-bold">Question</th>
-                  <th className="px-6 py-4 font-bold">Your Answer</th>
-                  <th className="px-6 py-4 font-bold">Correct Answer</th>
-                  <th className="px-6 py-4 font-bold">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {breakdown.map((item) => (
-                  <tr key={item.id} className={cn(
-                    "text-sm transition-colors",
-                    item.status === 'Wrong' ? "bg-danger/5" : "hover:bg-bg-surface/50"
-                  )}>
-                    <td className="px-6 py-4 font-medium text-text-secondary">{item.id}</td>
-                    <td className="px-6 py-4 font-bold max-w-xs">{item.question}</td>
-                    <td className="px-6 py-4 text-text-secondary">{item.your}</td>
-                    <td className="px-6 py-4 text-success font-bold">{item.correct}</td>
-                    <td className="px-6 py-4">
-                      <div className={cn(
-                        "flex items-center gap-1 font-bold",
-                        item.status === 'Correct' ? "text-success" : "text-danger"
-                      )}>
-                        {item.status === 'Correct' ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
-                        {item.status}
+            <div className="divide-y divide-border">
+              {result.questionAnalytics.map((item: any, idx: number) => (
+                <div key={item.questionId} className={cn(
+                  "p-6 transition-colors",
+                  item.isCorrect ? "hover:bg-success/5" : "hover:bg-danger/5"
+                )}>
+                  <div className="flex items-start gap-4">
+                    <div className={cn(
+                      "w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-bold text-white",
+                      item.isCorrect ? "bg-success" : "bg-danger"
+                    )}>
+                      {idx + 1}
+                    </div>
+                    <div className="flex-1 space-y-4">
+                      <h4 className="font-bold text-lg">{item.questionText}</h4>
+                      
+                      <div className="grid sm:grid-cols-2 gap-4 text-sm">
+                        <div className="p-3 rounded-xl border border-border bg-bg-surface/50">
+                          <p className="text-text-secondary font-medium mb-1">Your Answer:</p>
+                          <p className={cn("font-bold", item.isCorrect ? "text-success" : "text-danger")}>
+                            {item.selectedOptionText}
+                          </p>
+                        </div>
+                        <div className="p-3 rounded-xl border border-border bg-bg-surface/50">
+                          <p className="text-text-secondary font-medium mb-1">Correct Answer:</p>
+                          <p className="font-bold text-success">{item.correctOptionText}</p>
+                        </div>
                       </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+
+                      {/* Explanation Section */}
+                      {(item.solutionText || item.solutionImage) && (
+                        <div className="mt-4 p-4 rounded-xl bg-primary/5 border border-primary/10">
+                          <h5 className="font-bold text-primary flex items-center gap-2 mb-2">
+                            <HelpCircle className="w-4 h-4" /> Explanation
+                          </h5>
+                          {item.solutionText && (
+                            <p className="text-text-secondary text-sm mb-3 whitespace-pre-wrap">
+                              {item.solutionText}
+                            </p>
+                          )}
+                          {item.solutionImage && (
+                            <div className="mt-2">
+                              <img 
+                                src={item.solutionImage} 
+                                alt="Solution Explanation" 
+                                className="max-w-full rounded-xl border border-border object-contain max-h-64"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
 
         {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center pb-20">
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Button variant="outline" className="border-border hover:bg-bg-surface h-12 px-8 rounded-xl font-bold">
             <Share2 className="mr-2 w-4 h-4" /> Share Result
           </Button>
-          <Button className="bg-accent hover:bg-accent-light text-white h-12 px-8 rounded-xl font-bold shadow-lg">
-            <RotateCcw className="mr-2 w-4 h-4" /> আবার Exam দাও
+          <Button className="bg-accent hover:bg-accent-light text-white h-12 px-8 rounded-xl font-bold shadow-lg" render={<Link href={`/student/leaderboard`} />}>
+            {/* The actual link to leaderboard needs exam id, assuming it's available via an API or passed from the start page, but here we can just go to dashboard */}
+             <Trophy className="mr-2 w-4 h-4" /> Leaderboard
           </Button>
-          <Button variant="ghost" className="text-primary hover:bg-primary/10 h-12 px-8 rounded-xl font-bold" asChild>
-            <Link href="/student/dashboard">
-              <LayoutDashboard className="mr-2 w-4 h-4" /> Dashboard এ ফিরে যাও
-            </Link>
+          <Button variant="ghost" className="text-primary hover:bg-primary/10 h-12 px-8 rounded-xl font-bold" render={<Link href="/student/dashboard" />}>
+              <LayoutDashboard className="mr-2 w-4 h-4" /> Dashboard
           </Button>
         </div>
       </div>

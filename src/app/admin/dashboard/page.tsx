@@ -57,8 +57,8 @@ export default function AdminDashboard() {
               <AlertTriangle className="w-5 h-5" />
               <span>⚠️ {pendingCount} টি payment pending approval এর জন্য অপেক্ষা করছে</span>
             </div>
-            <Button className="bg-warning hover:bg-warning/80 text-bg-dark font-bold rounded-xl" asChild>
-              <Link href="/admin/payments">এখনই দেখো</Link>
+            <Button className="bg-warning hover:bg-warning/80 text-bg-dark font-bold rounded-xl" render={<Link href="/admin/payments" />}>
+              এখনই দেখো
             </Button>
           </motion.div>
         )}
@@ -93,8 +93,8 @@ export default function AdminDashboard() {
                 <div className="text-center text-text-secondary">
                   <TrendingUp className="w-12 h-12 mx-auto mb-4 opacity-20" />
                   <p className="font-medium">Revenue & User Growth Charts</p>
-                  <Button variant="link" className="text-primary" asChild>
-                    <Link href="/admin/revenue">View Detailed Analytics</Link>
+                  <Button variant="link" className="text-primary" render={<Link href="/admin/revenue" />}>
+                    View Detailed Analytics
                   </Button>
                 </div>
              </CardContent>

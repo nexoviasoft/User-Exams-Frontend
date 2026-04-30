@@ -1,26 +1,90 @@
+@import url('https://fonts.googleapis.com/css2?family=Manjari:wght@100;400;700&family=Sora:wght@700;800&family=DM+Sans:ital,opsz,wght@0,9..40,400..600;1,9..40,400..600&display=swap');
 @import "tailwindcss";
+@import "tw-animate-css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-body);
+  --font-display: var(--font-display);
+  
+  --color-primary: var(--primary);
+  --color-primary-light: var(--primary-light);
+  --color-accent: var(--accent);
+  --color-accent-light: var(--accent-light);
+  
+  --color-bg-dark: var(--bg-dark);
+  --color-bg-card: var(--bg-card);
+  --color-bg-surface: var(--bg-surface);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-border: var(--border);
+  --color-input: var(--border);
+  --color-ring: var(--primary);
+
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --color-warning: var(--warning);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+:root {
+  --primary: #0052CC;
+  --primary-light: #1A6FE8;
+  --accent: #FF6B00;
+  --accent-light: #FF8C38;
+  --success: #00A651;
+  --danger: #E53E3E;
+  --warning: #F6AD55;
+  --bg-dark: #0A0F1E;
+  --bg-card: #111827;
+  --bg-surface: #1A2235;
+  --text-primary: #F0F4FF;
+  --text-secondary: #8A99B8;
+  --border: #1E2D45;
+  --font-display: 'Manjari', sans-serif;
+  --font-body: 'Manjari', sans-serif;
+  
+  /* Shadcn defaults mapping to user variables */
+  --background: var(--bg-dark);
+  --foreground: var(--text-primary);
+  --card: var(--bg-card);
+  --card-foreground: var(--text-primary);
+  --popover: var(--bg-surface);
+  --popover-foreground: var(--text-primary);
+  --muted: var(--bg-surface);
+  --muted-foreground: var(--text-secondary);
+  --accent-foreground: var(--text-primary);
+  --destructive: var(--danger);
+  --destructive-foreground: var(--text-primary);
+  --input: var(--border);
+  --ring: var(--primary);
+  --radius: 0.75rem;
+}
+
+/* Force dark mode behavior since it's a dark dashboard */
+html {
+  color-scheme: dark;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
   }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    background-color: var(--bg-dark);
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display font-bold;
+  }
 }

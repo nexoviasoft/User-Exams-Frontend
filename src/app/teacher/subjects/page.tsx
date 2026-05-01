@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,7 +12,8 @@ import {
   Edit2, 
   Trash2, 
   Loader2,
-  DollarSign
+  DollarSign,
+  Eye
 } from 'lucide-react';
 import {
   Dialog,
@@ -24,21 +26,25 @@ import {
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axiosInstance from '@/lib/axios';
+import { cn } from '@/lib/utils';
 
 interface Subject {
   id: string;
   name: string;
   price: number;
   isFree: boolean;
+  isPublic: boolean;
   examType: { id: string; name: string };
   candidateType: { id: string; name: string };
 }
 
 export default function SubjectsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingSubjectId, setEditingSubjectId] = useState<string | null>(null);
   const [subjectName, setSubjectName] = useState('');
   const [price, setPrice] = useState('0');
   const [isFree, setIsFree] = useState(true);
+  const [isPublic, setIsPublic] = useState(false);
   const [selectedExamType, setSelectedExamType] = useState('');
   const [selectedCandidateType, setSelectedCandidateType] = useState('');
 
@@ -84,10 +90,28 @@ export default function SubjectsPage() {
     },
   });
 
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const response = await axiosInstance.patch(`/subject/${id}`, data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['teacher-subjects'] });
+      toast.success('Subject update হয়েছে!');
+      setIsModalOpen(false);
+      resetForm();
+    },
+    onError: () => {
+      toast.error('Update করতে সমস্যা হয়েছে।');
+    },
+  });
+
   const resetForm = () => {
+    setEditingSubjectId(null);
     setSubjectName('');
     setPrice('0');
     setIsFree(true);
+    setIsPublic(false);
     setSelectedExamType('');
     setSelectedCandidateType('');
   };
@@ -97,13 +121,36 @@ export default function SubjectsPage() {
       toast.error('সব তথ্য পূরণ করুন');
       return;
     }
-    createMutation.mutate({
+    if (!isFree && (!price || Number(price) <= 0)) {
+      toast.error('Paid Subject হলে valid price দিন');
+      return;
+    }
+
+    const payload = {
       name: subjectName,
       price: isFree ? 0 : parseInt(price) * 100, // storing in paisa
       isFree,
+      isPublic,
       examTypeId: selectedExamType,
       candidateTypeId: selectedCandidateType,
-    });
+    };
+
+    if (editingSubjectId) {
+      updateMutation.mutate({ id: editingSubjectId, data: payload });
+    } else {
+      createMutation.mutate(payload);
+    }
+  };
+
+  const handleEditSubject = (subject: Subject) => {
+    setEditingSubjectId(subject.id);
+    setSubjectName(subject.name);
+    setIsFree(subject.isFree);
+    setIsPublic(subject.isPublic);
+    setPrice(String(Math.round((subject.price || 0) / 100)));
+    setSelectedExamType(subject.examType?.id || '');
+    setSelectedCandidateType(subject.candidateType?.id || '');
+    setIsModalOpen(true);
   };
 
   return (
@@ -140,6 +187,9 @@ export default function SubjectsPage() {
                     <Badge className={subject.isFree ? "bg-success/10 text-success" : "bg-primary/10 text-primary"}>
                       {subject.isFree ? 'Free' : `৳${subject.price / 100}`}
                     </Badge>
+                    <Badge className={subject.isPublic ? "bg-success/10 text-success" : "bg-warning/10 text-warning"}>
+                      {subject.isPublic ? 'Public' : 'Private'}
+                    </Badge>
                   </div>
                   <CardTitle className="text-xl font-display font-bold group-hover:text-primary transition-colors">
                     {subject.name}
@@ -147,6 +197,24 @@ export default function SubjectsPage() {
                   <p className="text-xs text-text-secondary mt-2">Candidate: {subject.candidateType?.name}</p>
                 </CardHeader>
                 <CardFooter className="mt-auto border-t border-border/50 pt-4 flex gap-2">
+                  <Link href={`/teacher/subjects/${subject.id}/exams`}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-text-secondary hover:text-primary rounded-xl"
+                      title="View Exams"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </Button>
+                  </Link>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-text-secondary hover:text-primary rounded-xl"
+                    onClick={() => handleEditSubject(subject)}
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </Button>
                   <Button variant="ghost" size="icon" className="text-text-secondary hover:text-danger rounded-xl ml-auto">
                     <Trash2 className="w-4 h-4" />
                   </Button>
@@ -162,9 +230,13 @@ export default function SubjectsPage() {
         }}>
           <DialogContent className="bg-bg-card border-border sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle className="text-2xl font-display font-bold">নতুন Subject</DialogTitle>
+              <DialogTitle className="text-2xl font-display font-bold">
+                {editingSubjectId ? 'Subject Update' : 'নতুন Subject'}
+              </DialogTitle>
               <DialogDescription className="text-text-secondary">
-                আপনার স্টুডেন্টদের জন্য একটি নতুন সাবজেক্ট তৈরি করুন।
+                {editingSubjectId
+                  ? 'Subject তথ্য update করুন।'
+                  : 'আপনার স্টুডেন্টদের জন্য একটি নতুন সাবজেক্ট তৈরি করুন।'}
               </DialogDescription>
             </DialogHeader>
             
@@ -229,6 +301,27 @@ export default function SubjectsPage() {
                 </button>
               </div>
 
+              <div className="flex items-center justify-between p-4 rounded-xl bg-bg-surface border border-border">
+                <div className="flex items-center gap-3">
+                  <BookOpen className="w-5 h-5 text-primary" />
+                  <div>
+                    <p className="text-sm font-bold">Public for Students?</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsPublic(!isPublic)}
+                  className={cn(
+                    "w-12 h-6 rounded-full relative transition-all duration-300",
+                    isPublic ? "bg-success" : "bg-bg-card"
+                  )}
+                >
+                  <div className={cn(
+                    "absolute top-1 w-4 h-4 rounded-full bg-white transition-all",
+                    isPublic ? "left-7" : "left-1"
+                  )} />
+                </button>
+              </div>
+
               {!isFree && (
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-text-secondary ml-1">মূল্য (Taka)</label>
@@ -246,10 +339,14 @@ export default function SubjectsPage() {
             <DialogFooter>
               <Button 
                 onClick={handleCreateSubject}
-                disabled={createMutation.isPending}
+                disabled={createMutation.isPending || updateMutation.isPending}
                 className="w-full bg-primary hover:bg-primary-light text-white font-bold h-12 rounded-xl"
               >
-                {createMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : 'Subject তৈরি করো'}
+                {(createMutation.isPending || updateMutation.isPending) ? (
+                  <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                ) : (
+                  editingSubjectId ? 'Subject Update করো' : 'Subject তৈরি করো'
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>

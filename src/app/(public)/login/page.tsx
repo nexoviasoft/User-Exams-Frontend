@@ -42,23 +42,19 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
     try {
-      // Real API call or simulation
-      // const response = await axiosInstance.post('/auth/login', data);
-      // const { user, accessToken, role } = response.data;
-      
-      // Simulating API call for demonstration
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      const mockRole = data.email.includes('admin') ? 'admin' : data.email.includes('teacher') ? 'teacher' : 'student';
+      const { email, password } = data;
+      // Backend login DTO only accepts email and password.
+      const response = await axiosInstance.post('/auth/login', { email, password });
+      const { user, accessToken } = response.data;
       
       dispatch(setAuth({
-        user: { id: '1', email: data.email, name: 'John Doe', role: mockRole as any },
-        accessToken: 'mock-jwt-token',
-        role: mockRole as any
+        user,
+        accessToken,
+        role: user.role
       }));
       
       toast.success('সফলভাবে লগইন হয়েছে!');
-      router.push(`/${mockRole}/dashboard`);
+      router.push(`/${user.role}/dashboard`);
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'লগইন করতে সমস্যা হয়েছে। আবার চেষ্টা করুন।');
     } finally {

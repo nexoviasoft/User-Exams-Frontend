@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -10,7 +11,6 @@ import {
   Banknote, 
   CreditCard, 
   AlertTriangle,
-  ArrowRight,
   TrendingUp,
   Clock,
   UserPlus,
@@ -18,24 +18,112 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { useGetAdminUsersQuery, useGetPendingTeacherRequestsQuery } from '@/store/slices/api/adminApi';
+import { useGetPaymentsQuery } from '@/store/slices/api/paymentsApi';
+import { useGetPlatformRevenueStatsQuery } from '@/store/slices/api/revenueApi';
+
+const formatCurrency = (amount: number) => `৳${Math.round(amount).toLocaleString('en-US')}`;
+const formatLakh = (amountInTaka: number) => `৳${(amountInTaka / 100000).toFixed(2)}L`;
+const getRelativeTime = (date: string) => {
+  const value = new Date(date);
+  if (Number.isNaN(value.getTime())) return 'recently';
+  const diffMinutes = Math.round((Date.now() - value.getTime()) / 60000);
+  if (diffMinutes < 1) return 'just now';
+  if (diffMinutes < 60) return `${diffMinutes} mins ago`;
+  const hours = Math.round(diffMinutes / 60);
+  if (hours < 24) return `${hours} hours ago`;
+  const days = Math.round(hours / 24);
+  return `${days} days ago`;
+};
 
 export default function AdminDashboard() {
-  const pendingCount = 3;
+  const { data: users = [], isLoading: usersLoading } = useGetAdminUsersQuery();
+  const { data: pendingTeachers = [] } = useGetPendingTeacherRequestsQuery();
+  const { data: pendingPaymentsRes } = useGetPaymentsQuery('pending');
+  const { data: allPaymentsRes } = useGetPaymentsQuery(undefined);
+  const { data: revenueStats } = useGetPlatformRevenueStatsQuery();
+
+  const pendingCount = pendingPaymentsRes?.total || 0;
+  const studentsCount = users.filter((u) => u.role === 'student').length;
+  const teachersCount = users.filter((u) => u.role === 'teacher').length;
+
+  const todayRevenue = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    const todayPayments = (allPaymentsRes?.items || []).filter((item) => {
+      if (item.status !== 'success') return false;
+      return new Date(item.createdAt).toISOString().slice(0, 10) === today;
+    });
+    return todayPayments.reduce((acc, item) => acc + (item.platformAmount || 0) / 100, 0);
+  }, [allPaymentsRes]);
 
   const stats = [
-    { name: 'Total Users', value: '11,284', subValue: '10,784 Students / 500 Teachers', icon: Users, color: 'text-primary' },
-    { name: 'Exams Published', value: '156', icon: FileText, color: 'text-success' },
-    { name: "Today's Revenue", value: '৳12,500', icon: Banknote, color: 'text-accent' },
-    { name: 'Pending Payments', value: pendingCount.toString(), icon: CreditCard, color: 'text-warning', isOrange: pendingCount > 0 },
-    { name: 'Total Revenue', value: '৳12.5L', icon: TrendingUp, color: 'text-success' },
+    {
+      name: 'Total Users',
+      value: usersLoading ? '...' : users.length.toLocaleString('en-US'),
+      subValue: `${studentsCount.toLocaleString('en-US')} Students / ${teachersCount.toLocaleString('en-US')} Teachers`,
+      icon: Users,
+      color: 'text-primary',
+    },
+    {
+      name: 'Teacher Requests',
+      value: pendingTeachers.length.toString(),
+      subValue: 'Pending admin approval',
+      icon: FileText,
+      color: 'text-success',
+    },
+    { name: "Today's Revenue", value: formatCurrency(todayRevenue), icon: Banknote, color: 'text-accent' },
+    {
+      name: 'Pending Payments',
+      value: pendingCount.toString(),
+      icon: CreditCard,
+      color: 'text-warning',
+      isOrange: pendingCount > 0,
+    },
+    {
+      name: 'Total Revenue',
+      value: formatLakh(revenueStats?.totalRevenueInTaka || 0),
+      icon: TrendingUp,
+      color: 'text-success',
+    },
   ];
 
-  const recentActivity = [
-    { type: 'register', user: 'Rahim Ahmed', time: '2 mins ago', icon: UserPlus, color: 'bg-primary/10 text-primary' },
-    { type: 'payment', user: 'Karim Ullah', amount: '৳150', time: '15 mins ago', icon: CreditCard, color: 'bg-success/10 text-success' },
-    { type: 'exam', title: 'IELTS Vocabulary Mock', teacher: 'Ms. Sarah', time: '1 hour ago', icon: Rocket, color: 'bg-accent/10 text-accent' },
-    { type: 'register', user: 'Tisha Rahman', time: '3 hours ago', icon: UserPlus, color: 'bg-primary/10 text-primary' },
-  ];
+  const recentActivity = useMemo(() => {
+    const userActivities = users.slice(0, 2).map((user) => ({
+      type: 'register' as const,
+      user: user.name,
+      time: getRelativeTime(user.createdAt),
+      icon: UserPlus,
+      color: 'bg-primary/10 text-primary',
+    }));
+
+    const paymentActivities = (allPaymentsRes?.items || [])
+      .filter((p) => p.status === 'success')
+      .slice(0, 2)
+      .map((payment) => ({
+        type: 'payment' as const,
+        user: payment.student?.user?.name || 'Student',
+        amount: formatCurrency((payment.totalAmount || 0) / 100),
+        time: getRelativeTime(payment.createdAt),
+        icon: CreditCard,
+        color: 'bg-success/10 text-success',
+      }));
+
+    const teacherActivity =
+      pendingTeachers.length > 0
+        ? [
+            {
+              type: 'exam' as const,
+              title: 'Teacher approval pending',
+              teacher: pendingTeachers[0].user?.name || 'Teacher',
+              time: getRelativeTime(pendingTeachers[0].user?.createdAt || new Date().toISOString()),
+              icon: Rocket,
+              color: 'bg-accent/10 text-accent',
+            },
+          ]
+        : [];
+
+    return [...userActivities, ...paymentActivities, ...teacherActivity].slice(0, 4);
+  }, [users, allPaymentsRes, pendingTeachers]);
 
   return (
     <DashboardLayout>

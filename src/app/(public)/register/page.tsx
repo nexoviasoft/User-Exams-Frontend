@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import { AuthLayout } from '@/components/auth/AuthLayout';
 import { cn } from '@/lib/utils';
 import axiosInstance from '@/lib/axios';
+import { useQuery } from '@tanstack/react-query';
 
 const registerSchema = z.object({
   name: z.string().min(2, 'নাম অন্তত ২ অক্ষরের হতে হবে'),
@@ -31,6 +32,11 @@ const registerSchema = z.object({
 });
 
 type RegisterFormValues = z.infer<typeof registerSchema>;
+
+type CandidateType = {
+  id: string;
+  name: string;
+};
 
 export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -52,6 +58,10 @@ export default function RegisterPage() {
   });
 
   const password = watch('password', '');
+  const { data: candidateTypeOptions = [], isLoading: candidateTypesLoading } = useQuery<CandidateType[]>({
+    queryKey: ['candidate-types-register'],
+    queryFn: async () => (await axiosInstance.get('/candidatetype')).data,
+  });
 
   // Simple password strength calculation
   const getPasswordStrength = () => {
@@ -69,7 +79,18 @@ export default function RegisterPage() {
   const onSubmit = async (data: RegisterFormValues) => {
     setIsLoading(true);
     try {
-      const response = await axiosInstance.post('/auth/register', data);
+      const payload = {
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        institute: data.institute,
+        department: data.department,
+        candidateTypes: data.candidateTypes,
+        password: data.password,
+        role: data.role,
+      };
+
+      const response = await axiosInstance.post('/auth/register', payload);
       
       dispatch(setAuth({
         user: { id: '2', email: data.email, name: data.name, role: data.role },
@@ -188,17 +209,23 @@ export default function RegisterPage() {
             <div className="space-y-3">
               <label className="text-sm font-medium text-text-secondary ml-1">Candidate Type (একাধিক নির্বাচন করা যাবে)</label>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {['Polytechnic Admission', 'DUET Admission', 'Job Preparation'].map((type) => (
-                  <label key={type} className="flex items-center gap-3 p-3.5 border border-border rounded-xl cursor-pointer hover:bg-bg-surface transition-colors bg-bg-surface/50">
-                    <input
-                      type="checkbox"
-                      value={type}
-                      {...register('candidateTypes')}
-                      className="w-5 h-5 text-primary bg-bg-dark border-border rounded focus:ring-primary/50 cursor-pointer accent-primary"
-                    />
-                    <span className="text-sm text-text-primary font-medium">{type}</span>
-                  </label>
-                ))}
+                {candidateTypesLoading ? (
+                  <div className="sm:col-span-3 text-sm text-text-secondary">Candidate types loading...</div>
+                ) : candidateTypeOptions.length === 0 ? (
+                  <div className="sm:col-span-3 text-sm text-text-secondary">No candidate type found.</div>
+                ) : (
+                  candidateTypeOptions.map((type) => (
+                    <label key={type.id} className="flex items-center gap-3 p-3.5 border border-border rounded-xl cursor-pointer hover:bg-bg-surface transition-colors bg-bg-surface/50">
+                      <input
+                        type="checkbox"
+                        value={type.id}
+                        {...register('candidateTypes')}
+                        className="w-5 h-5 text-primary bg-bg-dark border-border rounded focus:ring-primary/50 cursor-pointer accent-primary"
+                      />
+                      <span className="text-sm text-text-primary font-medium">{type.name}</span>
+                    </label>
+                  ))
+                )}
               </div>
               {errors.candidateTypes && <p className="text-xs text-danger ml-1">{errors.candidateTypes.message}</p>}
             </div>

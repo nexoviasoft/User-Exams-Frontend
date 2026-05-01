@@ -22,8 +22,31 @@ import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import axiosInstance from '@/lib/axios';
 import { useParams } from 'next/navigation';
-import Image from 'next/image';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts';
+
+type ExamResult = {
+  studentExamId: string;
+  examId: string;
+  subjectId: string | null;
+  modelTestId: string | null;
+  examTitle: string;
+  totalQuestions: number;
+  correct: number;
+  wrong: number;
+  percentageScore: number;
+  isPassed: boolean | null;
+  timeTakenSeconds: number;
+  passMark: number | null;
+  questionAnalytics: Array<{
+    questionId: string;
+    questionText: string;
+    selectedOptionText: string;
+    isCorrect: boolean;
+    correctOptionText: string;
+    solutionText?: string;
+    solutionImage?: string;
+  }>;
+};
 
 export default function ResultPage() {
   const params = useParams();
@@ -33,7 +56,7 @@ export default function ResultPage() {
     queryKey: ['exam-result', id],
     queryFn: async () => {
       const response = await axiosInstance.get(`/student-exams/result/${id}`);
-      return response.data;
+      return response.data as ExamResult;
     },
     enabled: !!id,
   });
@@ -255,9 +278,11 @@ export default function ResultPage() {
           <Button variant="outline" className="border-border hover:bg-bg-surface h-12 px-8 rounded-xl font-bold">
             <Share2 className="mr-2 w-4 h-4" /> Share Result
           </Button>
-          <Button className="bg-accent hover:bg-accent-light text-white h-12 px-8 rounded-xl font-bold shadow-lg" render={<Link href={`/student/leaderboard`} />}>
-            {/* The actual link to leaderboard needs exam id, assuming it's available via an API or passed from the start page, but here we can just go to dashboard */}
-             <Trophy className="mr-2 w-4 h-4" /> Leaderboard
+          <Button
+            className="bg-accent hover:bg-accent-light text-white h-12 px-8 rounded-xl font-bold shadow-lg"
+            render={<Link href={`/student/leaderboard/${result.examId}`} />}
+          >
+            <Trophy className="mr-2 w-4 h-4" /> Leaderboard
           </Button>
           <Button variant="ghost" className="text-primary hover:bg-primary/10 h-12 px-8 rounded-xl font-bold" render={<Link href="/student/dashboard" />}>
               <LayoutDashboard className="mr-2 w-4 h-4" /> Dashboard

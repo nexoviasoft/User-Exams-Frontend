@@ -1,187 +1,205 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { 
-  Database, 
-  PlusCircle, 
-  Edit2, 
-  Trash2, 
-  Eye, 
-  Lock, 
-  Globe,
-  Loader2
-} from 'lucide-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
+import { Loader2, Layers, Plus } from 'lucide-react';
+import { useGetExamTypesQuery } from '@/store/slices/api/examTypesApi';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import axiosInstance from '@/lib/axios';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 export default function QuestionBanksPage() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [bankName, setBankName] = useState('');
+  const { data: examTypes = [], isLoading } = useGetExamTypesQuery();
+  const { data: subjects = [] } = useQuery({ queryKey: ['teacher-subjects'], queryFn: async () => (await axiosInstance.get('/subject')).data });
+  const { data: modelTests = [] } = useQuery({ queryKey: ['teacher-modeltests'], queryFn: async () => (await axiosInstance.get('/modeltest')).data });
+  
+  const queryClient = useQueryClient();
+
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [isPublic, setIsPublic] = useState(false);
+  const [examTypeId, setExamTypeId] = useState('');
+  const [scopeId, setScopeId] = useState('');
 
-  const [banks, setBanks] = useState([
-    { id: '1', name: 'BCS English Literature', questions: 120, isPublic: true, description: 'Questions covering 1500-present' },
-    { id: '2', name: 'Medical Biology (Zoology)', questions: 85, isPublic: false, description: 'HSC standard Zoology questions' },
-    { id: '3', name: 'University Math KA Unit', questions: 45, isPublic: true, description: 'Previous year admission questions' },
-  ]);
+  const filteredSubjects = subjects.filter((s: any) => s.examType?.id === examTypeId);
+  const filteredModelTests = modelTests.filter((m: any) => m.examType?.id === examTypeId);
 
-  const handleCreateBank = async () => {
-    if (!bankName) {
-      toast.error('ব্যাংকের নাম দিন');
-      return;
-    }
-    setIsLoading(true);
-    try {
-      // Simulation
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      const newBank = {
-        id: Math.random().toString(),
-        name: bankName,
-        questions: 0,
-        isPublic,
-        description
-      };
-      setBanks([newBank, ...banks]);
-      toast.success('Question Bank তৈরি হয়েছে!');
-      setIsModalOpen(false);
-      setBankName('');
+  const createBankMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await axiosInstance.post('/question-banks', data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['teacher-question-banks'] });
+      setOpen(false);
+      setName('');
       setDescription('');
-    } catch (error) {
-      toast.error('সমস্যা হয়েছে, আবার চেষ্টা করুন।');
-    } finally {
-      setIsLoading(false);
-    }
+      setExamTypeId('');
+      setScopeId('');
+    },
+  });
+
+  const handleCreate = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim() || !scopeId) return;
+    const [selectedScopeType, selectedScopeId] = scopeId.split(':');
+    createBankMutation.mutate({
+      name,
+      description,
+      isPublic: false,
+      subjectId: selectedScopeType === 'subject' ? selectedScopeId : undefined,
+      modelTestId: selectedScopeType === 'modelTest' ? selectedScopeId : undefined,
+    });
   };
 
   return (
     <DashboardLayout>
       <div className="space-y-8 max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-display font-bold tracking-tight">Question Banks 📚</h1>
-            <p className="text-text-secondary mt-1">আপনার সব প্রশ্নের সংগ্রহশালা এখানে পরিচালনা করুন।</p>
+            <h1 className="text-3xl font-display font-bold tracking-tight">Question Banks</h1>
+            <p className="text-text-secondary mt-1">প্রথমে Exam Type সিলেক্ট করুন অথবা সরাসরি Bank তৈরি করুন।</p>
           </div>
-          <Button 
-            onClick={() => setIsModalOpen(true)}
-            className="bg-primary hover:bg-primary-light text-white rounded-xl h-12 px-6 font-bold shadow-lg"
-          >
-            <PlusCircle className="w-5 h-5 mr-2" /> নতুন Bank তৈরি
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button className="rounded-xl" variant="outline" onClick={() => setOpen(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              নতুন Bank তৈরি করুন
+            </Button>
+            <Link href="/teacher/create-question">
+              <Button className="rounded-xl">নতুন Question যোগ করুন</Button>
+            </Link>
+          </div>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {banks.map((bank) => (
-            <Card key={bank.id} className="border-border bg-bg-card/50 hover:border-primary/30 transition-all flex flex-col group">
-              <CardHeader>
-                <div className="flex justify-between items-start mb-2">
-                  <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
-                    <Database className="w-3 h-3 mr-1" /> {bank.questions} Questions
-                  </Badge>
-                  <Badge className={cn(
-                    bank.isPublic ? "bg-success/10 text-success" : "bg-text-secondary/10 text-text-secondary"
-                  )}>
-                    {bank.isPublic ? <Globe className="w-3 h-3 mr-1" /> : <Lock className="w-3 h-3 mr-1" />}
-                    {bank.isPublic ? 'Public' : 'Private'}
-                  </Badge>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <form onSubmit={handleCreate}>
+              <DialogHeader>
+                <DialogTitle>নতুন Question Bank তৈরি করুন</DialogTitle>
+                <DialogDescription>
+                  এই Question Bank এর অধীনে আপনি অনেকগুলো Question যুক্ত করতে পারবেন।
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="space-y-2">
+                  <Label>Exam Type</Label>
+                  <select
+                    className="flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    value={examTypeId}
+                    onChange={(e) => {
+                      setExamTypeId(e.target.value);
+                      setScopeId('');
+                    }}
+                    required
+                  >
+                    <option value="">Select Exam Type</option>
+                    {examTypes.map((et: any) => (
+                      <option key={et.id} value={et.id}>
+                        {et.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-                <CardTitle className="text-xl font-display font-bold group-hover:text-primary transition-colors">
-                  {bank.name}
-                </CardTitle>
-                <p className="text-xs text-text-secondary mt-2 line-clamp-2">{bank.description}</p>
-              </CardHeader>
-              <CardFooter className="mt-auto border-t border-border/50 pt-4 flex gap-2">
-                <Button className="flex-1 bg-bg-surface hover:bg-primary text-text-primary hover:text-white border border-border hover:border-primary rounded-xl transition-all">
-                  Questions দেখো
-                </Button>
-                <Button variant="ghost" size="icon" className="text-text-secondary hover:text-primary rounded-xl">
-                  <Edit2 className="w-4 h-4" />
-                </Button>
-                <Button variant="ghost" size="icon" className="text-text-secondary hover:text-danger rounded-xl">
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
 
-        {/* Create Bank Modal */}
-        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-          <DialogContent className="bg-bg-card border-border sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle className="text-2xl font-display font-bold">নতুন Question Bank</DialogTitle>
-              <DialogDescription className="text-text-secondary">
-                আপনার প্রশ্নের জন্য একটি নতুন ক্যাটাগরি বা ব্যাংক তৈরি করুন।
-              </DialogDescription>
-            </DialogHeader>
-            
-            <div className="space-y-6 py-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-text-secondary ml-1">ব্যাংকের নাম</label>
-                <input 
-                  type="text" 
-                  placeholder="যেমন: BCS English Grammar" 
-                  className="w-full bg-bg-surface border border-border rounded-xl py-3 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-                  value={bankName}
-                  onChange={(e) => setBankName(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-text-secondary ml-1">বিবরণ (ঐচ্ছিক)</label>
-                <textarea 
-                  placeholder="এই ব্যাংকে কী ধরণের প্রশ্ন থাকবে..." 
-                  className="w-full bg-bg-surface border border-border rounded-xl py-3 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 min-h-[100px]"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                />
-              </div>
-              <div className="flex items-center justify-between p-4 rounded-xl bg-bg-surface border border-border">
-                <div className="flex items-center gap-3">
-                  <Globe className={cn("w-5 h-5", isPublic ? "text-primary" : "text-text-secondary")} />
-                  <div>
-                    <p className="text-sm font-bold">Public Bank?</p>
-                    <p className="text-[10px] text-text-secondary">অন্য টিচাররা আপনার প্রশ্ন দেখতে পারবে</p>
-                  </div>
+                {examTypeId && (
+                  <>
+                    <div className="space-y-2">
+                      <Label>Subject / Model Test</Label>
+                      <select
+                        className="flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        value={scopeId}
+                        onChange={(e) => setScopeId(e.target.value)}
+                        required
+                      >
+                        <option value="">Select Subject or Model Test</option>
+                        {filteredSubjects.map((s: any) => (
+                          <option key={`subject-${s.id}`} value={`subject:${s.id}`}>
+                            Subject: {s.name}
+                          </option>
+                        ))}
+                        {filteredModelTests.map((m: any) => (
+                          <option key={`modelTest-${m.id}`} value={`modelTest:${m.id}`}>
+                            Model Test: {m.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </>
+                )}
+
+                <div className="space-y-2">
+                  <Label htmlFor="name">Bank Name</Label>
+                  <Input
+                    id="name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="যেমন: Physics Chapter 1 MCQ"
+                    required
+                  />
                 </div>
-                <button
-                  onClick={() => setIsPublic(!isPublic)}
-                  className={cn(
-                    "w-12 h-6 rounded-full relative transition-all duration-300",
-                    isPublic ? "bg-primary" : "bg-bg-card"
-                  )}
+                <div className="space-y-2">
+                  <Label htmlFor="description">Description (Optional)</Label>
+                  <Textarea
+                    id="description"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="অতিরিক্ত কোনো তথ্য থাকলে দিন..."
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setOpen(false)}
+                  disabled={createBankMutation.isPending}
                 >
-                  <div className={cn(
-                    "absolute top-1 w-4 h-4 rounded-full bg-white transition-all",
-                    isPublic ? "left-7" : "left-1"
-                  )} />
-                </button>
-              </div>
-            </div>
-
-            <DialogFooter>
-              <Button 
-                onClick={handleCreateBank}
-                disabled={isLoading}
-                className="w-full bg-primary hover:bg-primary-light text-white font-bold h-12 rounded-xl"
-              >
-                {isLoading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : 'Bank তৈরি করো'}
-              </Button>
-            </DialogFooter>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={createBankMutation.isPending || !scopeId}>
+                  {createBankMutation.isPending ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : null}
+                  Create
+                </Button>
+              </DialogFooter>
+            </form>
           </DialogContent>
         </Dialog>
+
+        {isLoading ? (
+          <div className="flex justify-center p-10">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        ) : examTypes.length === 0 ? (
+          <div className="rounded-xl border border-border bg-bg-card/50 p-6 text-sm text-text-secondary">
+            কোনো Exam Type পাওয়া যায়নি।
+          </div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {examTypes.map((examType: any) => (
+              <Link key={examType.id} href={`/teacher/question-banks/exam-type/${examType.id}`}>
+                <Card className="border-border bg-bg-card/50 hover:border-primary/40 transition-all cursor-pointer">
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Layers className="w-5 h-5 text-primary" />
+                      {examType.name}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-xs text-text-secondary">Click করলে Subject / Model Test list দেখাবে</p>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );

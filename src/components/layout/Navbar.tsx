@@ -6,10 +6,17 @@ import { logout } from '@/store/slices/authSlice';
 import { Button } from '@/components/ui/button';
 import { LogOut, User, Bell, Search, Menu, GraduationCap } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 
 export const Navbar = ({ onMenuClick }: { onMenuClick?: () => void }) => {
   const { user } = useAuth();
   const dispatch = useAppDispatch();
+  const router = useRouter();
+
+  const handleLogout = () => {
+    dispatch(logout());
+    router.push('/login');
+  };
 
   return (
     <nav className="h-16 border-b border-border bg-bg-card/50 backdrop-blur-md sticky top-0 z-40 px-6 flex items-center justify-between shrink-0">
@@ -61,7 +68,7 @@ export const Navbar = ({ onMenuClick }: { onMenuClick?: () => void }) => {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => dispatch(logout())}
+            onClick={handleLogout}
             className="text-danger hover:bg-danger/10"
           >
             <LogOut className="w-5 h-5" />

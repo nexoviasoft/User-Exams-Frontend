@@ -8,18 +8,60 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { 
   BookOpen, 
-  Trophy, 
-  TrendingUp, 
   Zap, 
   ArrowRight,
   Clock,
-  ChevronRight,
   ShoppingBag,
-  FileBadge
+  FileBadge,
+  Loader2,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import axiosInstance from '@/lib/axios';
+
+type PurchaseStats = {
+  purchasedSubjects: number;
+  purchasedExams: number;
+};
+
+type StudentExamHistoryItem = {
+  studentExamId: string;
+  examTitle: string;
+  score: number;
+  totalQuestions: number;
+  percentageScore: number;
+  status: string;
+  startedAt: string;
+  completedAt?: string | null;
+};
+
+type SubjectExam = {
+  id: string;
+  title: string;
+  totalQuestions: number;
+};
+
+type StudentSubject = {
+  id: string;
+  name: string;
+  isFree: boolean;
+  price: number;
+};
+
+type StudentModelTest = {
+  id: string;
+  name: string;
+  isFree: boolean;
+  price: number;
+};
+
+type AvailableExam = {
+  id: string;
+  title: string;
+  questions: number;
+  duration: string;
+  priceLabel: string;
+};
 
 export default function StudentDashboard() {
   const { user } = useAuth();
@@ -28,29 +70,94 @@ export default function StudentDashboard() {
     queryKey: ['student-purchase-stats'],
     queryFn: async () => {
       const response = await axiosInstance.get('/payments/student/stats');
-      return response.data;
+      return response.data as PurchaseStats;
     },
     enabled: !!user,
   });
 
+  const { data: history = [], isLoading: isHistoryLoading } = useQuery({
+    queryKey: ['student-exam-history'],
+    queryFn: async () => {
+      const response = await axiosInstance.get('/student-exams/history');
+      return response.data as StudentExamHistoryItem[];
+    },
+    enabled: !!user,
+  });
+
+  const { data: availableExams = [], isLoading: isAvailableExamsLoading } = useQuery({
+    queryKey: ['student-dashboard-available-exams'],
+    queryFn: async () => {
+      const [subjectsRes, modelTestsRes] = await Promise.all([
+        axiosInstance.get('/subject/student/my-subjects'),
+        axiosInstance.get('/modeltest/student/my-modeltests'),
+      ]);
+
+      const subjects = subjectsRes.data as StudentSubject[];
+      const modelTests = modelTestsRes.data as StudentModelTest[];
+
+      const subjectDetails = await Promise.all(
+        subjects.map(async (subject) => {
+          const detailsRes = await axiosInstance.get(`/subject/student/${subject.id}`);
+          return {
+            ...subject,
+            exams: (detailsRes.data?.exams || []) as SubjectExam[],
+          };
+        }),
+      );
+
+      const modelTestDetails = await Promise.all(
+        modelTests.map(async (modelTest) => {
+          const detailsRes = await axiosInstance.get(`/modeltest/student/${modelTest.id}`);
+          return {
+            ...modelTest,
+            exams: (detailsRes.data?.exams || []) as SubjectExam[],
+          };
+        }),
+      );
+
+      const subjectExamCards = subjectDetails.flatMap((subject) =>
+        subject.exams.map((exam) => ({
+          id: exam.id,
+          title: exam.title,
+          questions: exam.totalQuestions || 0,
+          duration: '-',
+          priceLabel: subject.isFree ? 'Free' : `৳${Math.floor((subject.price || 0) / 100)}`,
+        })),
+      );
+
+      const modelTestExamCards = modelTestDetails.flatMap((modelTest) =>
+        modelTest.exams.map((exam) => ({
+          id: exam.id,
+          title: exam.title,
+          questions: exam.totalQuestions || 0,
+          duration: '-',
+          priceLabel: modelTest.isFree ? 'Free' : `৳${Math.floor((modelTest.price || 0) / 100)}`,
+        })),
+      );
+
+      return [...subjectExamCards, ...modelTestExamCards] as AvailableExam[];
+    },
+    enabled: !!user,
+  });
+
+  const freeExamsRemaining = availableExams.filter((exam) => exam.priceLabel === 'Free').length;
+
   const stats = [
-    { name: 'Total Exams Given', value: '12', icon: BookOpen, color: 'text-primary' },
+    { name: 'Total Exams Given', value: history.length.toString(), icon: BookOpen, color: 'text-primary' },
     { name: 'Purchased Subjects', value: purchaseStats?.purchasedSubjects || '0', icon: ShoppingBag, color: 'text-success' },
     { name: 'Purchased Exams/Models', value: purchaseStats?.purchasedExams || '0', icon: FileBadge, color: 'text-accent' },
-    { name: 'Free Exams Remaining', value: '2', icon: Zap, color: 'text-warning', badge: '2 বাকি' },
+    { name: 'Free Exams Remaining', value: freeExamsRemaining.toString(), icon: Zap, color: 'text-warning', badge: `${freeExamsRemaining} বাকি` },
   ];
 
-  const recentActivity = [
-    { id: '1', title: 'Mathematics Final', score: '18/20', status: 'Passed', date: '2 hours ago', color: 'bg-success/10 text-success' },
-    { id: '2', title: 'Physics Quiz', score: '12/20', status: 'Failed', date: 'Yesterday', color: 'bg-danger/10 text-danger' },
-    { id: '3', title: 'English Grammar', score: '15/20', status: 'Passed', date: '2 days ago', color: 'bg-success/10 text-success' },
-  ];
+  const recentActivity = history.slice(0, 3).map((item) => ({
+    id: item.studentExamId,
+    title: item.examTitle,
+    score: `${item.score}/${item.totalQuestions}`,
+    date: item.completedAt ? new Date(item.completedAt).toLocaleDateString() : 'In progress',
+    color: item.percentageScore >= 40 ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger',
+  }));
 
-  const availableExams = [
-    { id: '1', title: 'BCS Preliminary Prep', questions: 100, duration: '120m', price: 'Free' },
-    { id: '2', title: 'University Admission Quiz', questions: 50, duration: '60m', price: '৳50' },
-    { id: '3', title: 'English Vocabulary Master', questions: 30, duration: '20m', price: 'Free' },
-  ];
+  const displayExams = availableExams.slice(0, 3);
 
   return (
     <DashboardLayout>
@@ -95,22 +202,30 @@ export default function StudentDashboard() {
               </Button>
             </CardHeader>
             <CardContent className="space-y-4">
-              {recentActivity.map((activity) => (
-                <div key={activity.id} className="flex items-center justify-between p-4 rounded-2xl bg-bg-surface border border-border hover:border-primary/20 transition-all group">
-                  <div className="flex items-center gap-4">
-                    <div className={cn("px-3 py-1 rounded-full text-xs font-bold", activity.color)}>
-                      {activity.score}
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-sm">{activity.title}</h4>
-                      <p className="text-xs text-text-secondary">{activity.date}</p>
-                    </div>
-                  </div>
-                  <Button variant="outline" size="sm" className="rounded-full group-hover:bg-primary group-hover:text-white transition-all">
-                    Result দেখো
-                  </Button>
+              {isHistoryLoading ? (
+                <div className="flex items-center justify-center py-8 text-text-secondary">
+                  <Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading activity...
                 </div>
-              ))}
+              ) : recentActivity.length > 0 ? (
+                recentActivity.map((activity) => (
+                  <div key={activity.id} className="flex items-center justify-between p-4 rounded-2xl bg-bg-surface border border-border hover:border-primary/20 transition-all group">
+                    <div className="flex items-center gap-4">
+                      <div className={cn('px-3 py-1 rounded-full text-xs font-bold', activity.color)}>
+                        {activity.score}
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-sm">{activity.title}</h4>
+                        <p className="text-xs text-text-secondary">{activity.date}</p>
+                      </div>
+                    </div>
+                    <Button variant="outline" size="sm" className="rounded-full group-hover:bg-primary group-hover:text-white transition-all">
+                      Result দেখো
+                    </Button>
+                  </div>
+                ))
+              ) : (
+                <div className="text-sm text-text-secondary py-6">No exam activity yet.</div>
+              )}
             </CardContent>
           </Card>
 
@@ -123,25 +238,33 @@ export default function StudentDashboard() {
               </Button>
             </CardHeader>
             <CardContent className="space-y-4">
-              {availableExams.map((exam) => (
-                <div key={exam.id} className="p-4 rounded-2xl bg-bg-surface border border-border space-y-3">
-                  <div className="flex justify-between items-start">
-                    <h4 className="font-bold text-sm max-w-[70%]">{exam.title}</h4>
-                    <Badge className={cn(
-                      exam.price === 'Free' ? "bg-success/10 text-success border-success/20" : "bg-accent/10 text-accent border-accent/20"
-                    )}>
-                      {exam.price}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center gap-4 text-xs text-text-secondary">
-                    <div className="flex items-center gap-1"><BookOpen className="w-3 h-3" /> {exam.questions} Qs</div>
-                    <div className="flex items-center gap-1"><Clock className="w-3 h-3" /> {exam.duration}</div>
-                  </div>
-                  <Button className="w-full bg-primary hover:bg-primary-light text-white text-xs h-9 rounded-xl">
-                    Exam দাও
-                  </Button>
+              {isAvailableExamsLoading ? (
+                <div className="flex items-center justify-center py-8 text-text-secondary">
+                  <Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading exams...
                 </div>
-              ))}
+              ) : displayExams.length > 0 ? (
+                displayExams.map((exam) => (
+                  <div key={exam.id} className="p-4 rounded-2xl bg-bg-surface border border-border space-y-3">
+                    <div className="flex justify-between items-start">
+                      <h4 className="font-bold text-sm max-w-[70%]">{exam.title}</h4>
+                      <Badge className={cn(
+                        exam.priceLabel === 'Free' ? 'bg-success/10 text-success border-success/20' : 'bg-accent/10 text-accent border-accent/20',
+                      )}>
+                        {exam.priceLabel}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-4 text-xs text-text-secondary">
+                      <div className="flex items-center gap-1"><BookOpen className="w-3 h-3" /> {exam.questions} Qs</div>
+                      <div className="flex items-center gap-1"><Clock className="w-3 h-3" /> {exam.duration}</div>
+                    </div>
+                    <Button className="w-full bg-primary hover:bg-primary-light text-white text-xs h-9 rounded-xl">
+                      Exam দাও
+                    </Button>
+                  </div>
+                ))
+              ) : (
+                <div className="text-sm text-text-secondary py-6">No published exams available yet.</div>
+              )}
             </CardContent>
           </Card>
         </div>

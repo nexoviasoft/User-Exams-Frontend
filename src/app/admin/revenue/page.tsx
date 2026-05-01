@@ -1,7 +1,10 @@
 'use client';
 
+import { useMemo } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { 
   AreaChart, 
   Area, 
@@ -17,31 +20,111 @@ import {
   TrendingUp, 
   ArrowUpRight, 
   CreditCard, 
-  User as UserIcon,
   Calendar,
-  Layers,
+  Loader2,
   ArrowDownRight
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import {
+  useGetPlatformRevenueStatsQuery,
+  useGetRevenuePaymentsQuery,
+  type RevenuePayment,
+} from '@/store/slices/api/revenueApi';
 
-const revenueData = [
-  { date: 'Oct 01', total: 4000, platform: 1200 },
-  { date: 'Oct 02', total: 3000, platform: 900 },
-  { date: 'Oct 03', total: 5000, platform: 1500 },
-  { date: 'Oct 04', total: 8000, platform: 2400 },
-  { date: 'Oct 05', total: 7000, platform: 2100 },
-  { date: 'Oct 06', total: 9000, platform: 2700 },
-  { date: 'Oct 07', total: 12500, platform: 3750 },
-];
+const formatCurrency = (amount: number) => `৳${Math.round(amount).toLocaleString('en-US')}`;
+const formatLakh = (amountInTaka: number) => `${(amountInTaka / 100000).toFixed(2)}L`;
+const formatMethod = (method?: string) => {
+  if (!method) return 'N/A';
+  const lower = method.toLowerCase();
+  if (lower === 'bkash') return 'bKash';
+  if (lower === 'nagad') return 'Nagad';
+  return method;
+};
 
-const transactions = [
-  { id: '1', date: 'Oct 12', student: 'Rahim Ahmed', exam: 'BCS Mock 01', teacher: 'Dr. Rahman', total: '৳100', teacherGot: '৳70', platformGot: '৳30', method: 'bKash' },
-  { id: '2', date: 'Oct 11', student: 'Karim Ullah', exam: 'Medical Mock', teacher: 'Prof. Karim', total: '৳150', teacherGot: '৳105', platformGot: '৳45', method: 'Nagad' },
-  { id: '3', date: 'Oct 10', student: 'Sumaya Akter', exam: 'BCS Mock 01', teacher: 'Dr. Rahman', total: '৳100', teacherGot: '৳70', platformGot: '৳30', method: 'bKash' },
-];
+const getMonthKey = (date: Date) => `${date.getFullYear()}-${date.getMonth()}`;
 
 export default function AdminRevenuePage() {
+  const {
+    data: stats,
+    isLoading: isStatsLoading,
+    isError: isStatsError,
+  } = useGetPlatformRevenueStatsQuery();
+  const {
+    data: paymentsResponse,
+    isLoading: isPaymentsLoading,
+    isError: isPaymentsError,
+  } = useGetRevenuePaymentsQuery();
+
+  const successfulPayments = paymentsResponse?.items || [];
+  const isLoading = isStatsLoading || isPaymentsLoading;
+  const hasError = isStatsError || isPaymentsError;
+
+  const derived = useMemo(() => {
+    const sortedPayments = [...successfulPayments].sort(
+      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    );
+
+    const now = new Date();
+    const currentMonthKey = getMonthKey(now);
+    const todayKey = now.toISOString().slice(0, 10);
+
+    const byDate = new Map<string, { total: number; platform: number }>();
+    let grossTotalInTaka = 0;
+    let teacherTotalInTaka = 0;
+    let platformTodayInTaka = 0;
+    let thisMonthPlatformInTaka = 0;
+
+    for (const payment of sortedPayments) {
+      const created = new Date(payment.createdAt);
+      if (Number.isNaN(created.getTime())) continue;
+
+      const dateKey = created.toISOString().slice(0, 10);
+      const chartPoint = byDate.get(dateKey) || { total: 0, platform: 0 };
+      const totalInTaka = (payment.totalAmount || 0) / 100;
+      const platformInTaka = (payment.platformAmount || 0) / 100;
+      const teacherInTaka = (payment.teacherAmount || 0) / 100;
+
+      chartPoint.total += totalInTaka;
+      chartPoint.platform += platformInTaka;
+      byDate.set(dateKey, chartPoint);
+
+      grossTotalInTaka += totalInTaka;
+      teacherTotalInTaka += teacherInTaka;
+
+      if (dateKey === todayKey) {
+        platformTodayInTaka += platformInTaka;
+      }
+      if (getMonthKey(created) === currentMonthKey) {
+        thisMonthPlatformInTaka += platformInTaka;
+      }
+    }
+
+    const chartData = Array.from(byDate.entries())
+      .map(([dateKey, value]) => ({
+        date: new Date(dateKey).toLocaleDateString('en-US', { month: 'short', day: '2-digit' }),
+        total: Math.round(value.total),
+        platform: Math.round(value.platform),
+      }))
+      .slice(-7);
+
+    return {
+      chartData,
+      grossTotalInTaka,
+      teacherTotalInTaka,
+      platformTodayInTaka,
+      thisMonthPlatformInTaka,
+      transactions: [...successfulPayments]
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, 8),
+    };
+  }, [successfulPayments]);
+
+  const totalTransactions = stats?.totalTransactions || 0;
+  const averagePerTxn =
+    totalTransactions > 0 ? Math.round(derived.grossTotalInTaka / totalTransactions) : 0;
+  const totalRevenueLakh = formatLakh(stats?.totalRevenueInTaka || 0);
+  const growthText = totalTransactions > 0 ? `${stats?.successCount || 0} success` : 'No data';
+
   return (
     <DashboardLayout>
       <div className="space-y-8 max-w-7xl mx-auto pb-20">
@@ -54,6 +137,11 @@ export default function AdminRevenuePage() {
              <Calendar className="w-4 h-4 mr-2" /> Last 30 Days
           </Button>
         </div>
+        {hasError && (
+          <div className="text-center p-4 text-danger font-bold bg-danger/5 rounded-xl border border-danger/20">
+            Revenue data load করতে সমস্যা হয়েছে।
+          </div>
+        )}
 
         {/* Big Revenue Card */}
         <Card className="border-border bg-primary/10 relative overflow-hidden p-8 md:p-12">
@@ -68,15 +156,15 @@ export default function AdminRevenuePage() {
                    animate={{ opacity: 1, scale: 1 }}
                    className="text-6xl md:text-8xl font-display font-extrabold text-primary"
                  >
-                   ৳12.50<span className="text-4xl ml-2 uppercase">Lakh</span>
+                  {isLoading ? '...' : `৳${totalRevenueLakh.replace('L', '')}`}<span className="text-4xl ml-2 uppercase">Lakh</span>
                  </motion.h2>
               </div>
               <div className="bg-bg-card/50 backdrop-blur-md p-6 rounded-[24px] border border-primary/20 min-w-[240px]">
                  <div className="flex items-center justify-between mb-4">
                     <span className="text-xs font-bold text-text-secondary">Growth</span>
-                    <Badge className="bg-success text-white">+24.5%</Badge>
+                    <Badge className="bg-success text-white">{growthText}</Badge>
                  </div>
-                 <div className="text-2xl font-bold">৳12,500</div>
+                 <div className="text-2xl font-bold">{isLoading ? '...' : formatCurrency(derived.platformTodayInTaka)}</div>
                  <p className="text-[10px] text-text-secondary mt-1 uppercase font-bold tracking-widest">Revenue Today</p>
               </div>
            </div>
@@ -87,16 +175,16 @@ export default function AdminRevenuePage() {
            <Card className="border-border bg-bg-card/50">
              <CardContent className="pt-6">
                 <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest mb-2">Teacher Payouts (70%)</p>
-                <div className="text-2xl font-bold text-accent">৳8.75L</div>
+                <div className="text-2xl font-bold text-accent">{isLoading ? '...' : `৳${formatLakh(derived.teacherTotalInTaka)}`}</div>
                 <div className="mt-2 flex items-center gap-1 text-[10px] text-text-secondary">
-                   <ArrowDownRight className="w-3 h-3" /> Allocated to 500 teachers
+                   <ArrowDownRight className="w-3 h-3" /> Based on approved payments
                 </div>
              </CardContent>
            </Card>
            <Card className="border-border bg-bg-card/50">
              <CardContent className="pt-6">
                 <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest mb-2">Platform Share (30%)</p>
-                <div className="text-2xl font-bold text-primary">৳3.75L</div>
+                <div className="text-2xl font-bold text-primary">{isLoading ? '...' : `৳${formatLakh(stats?.totalRevenueInTaka || 0)}`}</div>
                 <div className="mt-2 flex items-center gap-1 text-[10px] text-text-secondary">
                    <ArrowUpRight className="w-3 h-3" /> Retained profit
                 </div>
@@ -105,7 +193,7 @@ export default function AdminRevenuePage() {
            <Card className="border-border bg-bg-card/50">
              <CardContent className="pt-6">
                 <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest mb-2">This Month</p>
-                <div className="text-2xl font-bold text-text-primary">৳1.2L</div>
+                <div className="text-2xl font-bold text-text-primary">{isLoading ? '...' : `৳${formatLakh(derived.thisMonthPlatformInTaka)}`}</div>
                 <div className="mt-2 flex items-center gap-1 text-[10px] text-text-secondary">
                    <TrendingUp className="w-3 h-3 text-success" /> Trending upward
                 </div>
@@ -114,9 +202,9 @@ export default function AdminRevenuePage() {
            <Card className="border-border bg-bg-card/50">
              <CardContent className="pt-6">
                 <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest mb-2">Total Transactions</p>
-                <div className="text-2xl font-bold text-text-primary">8,450</div>
+                <div className="text-2xl font-bold text-text-primary">{isLoading ? '...' : totalTransactions.toLocaleString('en-US')}</div>
                 <div className="mt-2 flex items-center gap-1 text-[10px] text-text-secondary">
-                   <CreditCard className="w-3 h-3" /> Average ৳148 / txn
+                   <CreditCard className="w-3 h-3" /> Average {formatCurrency(averagePerTxn)} / txn
                 </div>
              </CardContent>
            </Card>
@@ -132,8 +220,13 @@ export default function AdminRevenuePage() {
               </div>
            </CardHeader>
            <CardContent className="h-[400px]">
+             {isLoading ? (
+               <div className="h-full flex items-center justify-center text-text-secondary">
+                 <Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading chart...
+               </div>
+             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={revenueData}>
+                <AreaChart data={derived.chartData}>
                   <defs>
                     <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#0052CC" stopOpacity={0.1}/>
@@ -154,6 +247,7 @@ export default function AdminRevenuePage() {
                   <Area type="monotone" dataKey="platform" stroke="#0052CC" fillOpacity={1} fill="url(#colorPlatform)" />
                 </AreaChart>
               </ResponsiveContainer>
+             )}
            </CardContent>
         </Card>
 
@@ -174,22 +268,45 @@ export default function AdminRevenuePage() {
                  </tr>
                </thead>
                <tbody className="divide-y divide-border text-sm">
-                 {transactions.map((t) => (
-                   <tr key={t.id} className="hover:bg-bg-surface/50 transition-colors">
-                     <td className="px-6 py-4 text-text-secondary">{t.date}</td>
-                     <td className="px-6 py-4">
-                        <div className="font-bold">{t.student}</div>
-                        <div className="text-[10px] text-text-secondary">{t.exam}</div>
-                     </td>
-                     <td className="px-6 py-4 font-medium">{t.teacher}</td>
-                     <td className="px-6 py-4 font-bold text-text-primary">{t.total}</td>
-                     <td className="px-6 py-4 text-accent font-bold">{t.teacherGot}</td>
-                     <td className="px-6 py-4 text-primary font-bold">{t.platformGot}</td>
-                     <td className="px-6 py-4">
-                        <Badge variant="outline" className="rounded-md bg-bg-surface text-[10px]">{t.method}</Badge>
-                     </td>
-                   </tr>
-                 ))}
+                {isLoading && (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-12 text-center text-text-secondary">
+                      <Loader2 className="w-4 h-4 animate-spin inline mr-2" />
+                      Loading transactions...
+                    </td>
+                  </tr>
+                )}
+                {!isLoading &&
+                  derived.transactions.map((t: RevenuePayment) => (
+                    <tr key={t.id} className="hover:bg-bg-surface/50 transition-colors">
+                      <td className="px-6 py-4 text-text-secondary">
+                        {new Date(t.createdAt).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: '2-digit',
+                        })}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="font-bold">{t.student?.user?.name || 'N/A'}</div>
+                        <div className="text-[10px] text-text-secondary">{t.exam?.title || 'N/A'}</div>
+                      </td>
+                      <td className="px-6 py-4 font-medium">{t.teacher?.user?.name || 'N/A'}</td>
+                      <td className="px-6 py-4 font-bold text-text-primary">{formatCurrency((t.totalAmount || 0) / 100)}</td>
+                      <td className="px-6 py-4 text-accent font-bold">{formatCurrency((t.teacherAmount || 0) / 100)}</td>
+                      <td className="px-6 py-4 text-primary font-bold">{formatCurrency((t.platformAmount || 0) / 100)}</td>
+                      <td className="px-6 py-4">
+                        <Badge variant="outline" className="rounded-md bg-bg-surface text-[10px]">
+                          {formatMethod(t.method)}
+                        </Badge>
+                      </td>
+                    </tr>
+                  ))}
+                {!isLoading && derived.transactions.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-12 text-center text-text-secondary">
+                      No successful transactions found.
+                    </td>
+                  </tr>
+                )}
                </tbody>
              </table>
            </CardContent>

@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -12,15 +13,36 @@ import {
   Calendar
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useGetMyEarningsQuery } from '@/store/slices/api/teacherDashboardApi';
 
 export default function EarningsPage() {
-  const earningsHistory = [
-    { id: '1', date: 'Oct 12, 2024', student: 'Rahim Ahmed', exam: 'BCS Preliminary 01', amount: '৳100', method: 'bKash' },
-    { id: '2', date: 'Oct 11, 2024', student: 'Karim Ullah', exam: 'Medical Prep Mock', amount: '৳150', method: 'Nagad' },
-    { id: '3', date: 'Oct 10, 2024', student: 'Sumaya Akter', exam: 'BCS Preliminary 01', amount: '৳100', method: 'bKash' },
-    { id: '4', date: 'Oct 09, 2024', student: 'Jamil Hasan', exam: 'DU Admission KA', amount: '৳200', method: 'bKash' },
-    { id: '5', date: 'Oct 08, 2024', student: 'Tisha Rahman', exam: 'Medical Prep Mock', amount: '৳150', method: 'Nagad' },
-  ];
+  const { data, isLoading, isError } = useGetMyEarningsQuery();
+  const earningsHistory = data?.paymentHistory || [];
+
+  const totalEarnings = data?.totalEarningsInTaka || 0;
+
+  const thisMonthEarnings = useMemo(() => {
+    const now = new Date();
+    return earningsHistory.reduce((sum, item) => {
+      if (!item.approvedAt) return sum;
+      const date = new Date(item.approvedAt);
+      if (date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear()) {
+        return sum + (item.amountInTaka || 0);
+      }
+      return sum;
+    }, 0);
+  }, [earningsHistory]);
+
+  const pendingVerification = 0;
+
+  const formatDate = (iso?: string | null) => {
+    if (!iso) return 'N/A';
+    return new Date(iso).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
 
   return (
     <DashboardLayout>
@@ -40,9 +62,9 @@ export default function EarningsPage() {
               <CardTitle className="text-sm font-bold text-primary uppercase tracking-widest">Total Earnings</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-5xl font-display font-extrabold text-primary">৳45,200</div>
+              <div className="text-5xl font-display font-extrabold text-primary">৳{totalEarnings.toLocaleString()}</div>
               <div className="mt-4 flex items-center gap-2 text-success font-bold text-sm">
-                <ArrowUpRight className="w-4 h-4" /> 12% increase from last month
+                <ArrowUpRight className="w-4 h-4" /> Live API earnings data
               </div>
             </CardContent>
           </Card>
@@ -52,7 +74,7 @@ export default function EarningsPage() {
               <CardTitle className="text-sm font-bold text-text-secondary uppercase tracking-widest">This Month</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-4xl font-display font-bold">৳12,450</div>
+              <div className="text-4xl font-display font-bold">৳{thisMonthEarnings.toLocaleString()}</div>
               <p className="text-xs text-text-secondary mt-2 flex items-center gap-1">
                 <Calendar className="w-3 h-3" /> Based on current billing cycle
               </p>
@@ -64,7 +86,7 @@ export default function EarningsPage() {
               <CardTitle className="text-sm font-bold text-text-secondary uppercase tracking-widest">Pending Verification</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-4xl font-display font-bold text-warning">৳1,500</div>
+              <div className="text-4xl font-display font-bold text-warning">৳{pendingVerification}</div>
               <p className="text-xs text-text-secondary mt-2 flex items-center gap-1">
                 <Clock className="w-3 h-3" /> Admin verification in progress
               </p>
@@ -90,23 +112,37 @@ export default function EarningsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {earningsHistory.map((item) => (
-                  <tr key={item.id} className="text-sm hover:bg-bg-surface/50 transition-colors">
-                    <td className="px-6 py-4 text-text-secondary">{item.date}</td>
+                {isLoading ? (
+                  <tr>
+                    <td className="px-6 py-6 text-text-secondary" colSpan={6}>Loading payment history...</td>
+                  </tr>
+                ) : isError ? (
+                  <tr>
+                    <td className="px-6 py-6 text-red-400" colSpan={6}>Failed to load payment history.</td>
+                  </tr>
+                ) : earningsHistory.length === 0 ? (
+                  <tr>
+                    <td className="px-6 py-6 text-text-secondary" colSpan={6}>No earnings history found.</td>
+                  </tr>
+                ) : earningsHistory.map((item) => (
+                  <tr key={item.paymentId} className="text-sm hover:bg-bg-surface/50 transition-colors">
+                    <td className="px-6 py-4 text-text-secondary">{formatDate(item.approvedAt)}</td>
                     <td className="px-6 py-4 font-bold flex items-center gap-2">
                        <div className="w-8 h-8 rounded-full bg-bg-surface flex items-center justify-center text-text-secondary">
                          <UserIcon className="w-4 h-4" />
                        </div>
-                       {item.student}
+                       {item.studentName || 'Unknown Student'}
                     </td>
-                    <td className="px-6 py-4 font-medium">{item.exam}</td>
-                    <td className="px-6 py-4 font-bold text-success">{item.amount}</td>
+                    <td className="px-6 py-4 font-medium">{item.examTitle || 'N/A'}</td>
+                    <td className="px-6 py-4 font-bold text-success">৳{(item.amountInTaka || 0).toLocaleString()}</td>
                     <td className="px-6 py-4">
                        <Badge variant="outline" className={cn(
                          "rounded-md",
-                         item.method === 'bKash' ? "bg-[#D12053]/5 text-[#D12053] border-[#D12053]/20" : "bg-[#F7941D]/5 text-[#F7941D] border-[#F7941D]/20"
+                         (item.method || '').toLowerCase().includes('bkash')
+                           ? "bg-[#D12053]/5 text-[#D12053] border-[#D12053]/20"
+                           : "bg-[#F7941D]/5 text-[#F7941D] border-[#F7941D]/20"
                        )}>
-                         {item.method}
+                         {item.method || 'Manual'}
                        </Badge>
                     </td>
                     <td className="px-6 py-4 text-success font-bold">Completed</td>

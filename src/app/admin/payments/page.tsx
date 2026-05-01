@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,10 +11,7 @@ import {
   Search, 
   Filter, 
   Smartphone, 
-  AlertTriangle,
   Loader2,
-  ExternalLink,
-  MoreVertical
 } from 'lucide-react';
 import {
   Dialog,
@@ -26,49 +23,152 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import {
+  useApprovePaymentMutation,
+  useGetPaymentsQuery,
+  useRejectPaymentMutation,
+  type ApiPayment,
+  type PaymentStatusFilter,
+} from '@/store/slices/api/paymentsApi';
+
+type PaymentStatusTab = 'Pending' | 'Approved' | 'Rejected' | 'All';
+
+type PaymentRow = {
+  id: string;
+  student: string;
+  exam: string;
+  method: string;
+  txnId: string;
+  sender: string;
+  amount: string;
+  createdAt: string;
+  status: string;
+};
+
+const statusQueryMap: Record<Exclude<PaymentStatusTab, 'All'>, PaymentStatusFilter> = {
+  Pending: 'pending',
+  Approved: 'success',
+  Rejected: 'failed',
+};
+
+const statusLabelMap: Record<string, string> = {
+  pending: 'Pending',
+  success: 'Approved',
+  failed: 'Rejected',
+};
+
+const formatMethod = (method?: string) => {
+  if (!method) return 'N/A';
+  const lower = method.toLowerCase();
+  if (lower === 'bkash') return 'bKash';
+  if (lower === 'nagad') return 'Nagad';
+  return method;
+};
+
+const formatAmount = (amountInPaisa?: number) => `৳${((amountInPaisa || 0) / 100).toFixed(0)}`;
+
+const formatRelativeTime = (isoDate?: string) => {
+  if (!isoDate) return 'N/A';
+  const value = new Date(isoDate);
+  if (Number.isNaN(value.getTime())) return 'N/A';
+
+  const diffMs = value.getTime() - Date.now();
+  const diffSeconds = Math.round(diffMs / 1000);
+  const absSeconds = Math.abs(diffSeconds);
+  const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
+
+  if (absSeconds < 60) return rtf.format(diffSeconds, 'second');
+  const diffMinutes = Math.round(diffSeconds / 60);
+  if (Math.abs(diffMinutes) < 60) return rtf.format(diffMinutes, 'minute');
+  const diffHours = Math.round(diffMinutes / 60);
+  if (Math.abs(diffHours) < 24) return rtf.format(diffHours, 'hour');
+  const diffDays = Math.round(diffHours / 24);
+  return rtf.format(diffDays, 'day');
+};
 
 export default function AdminPaymentsPage() {
-  const [tab, setTab] = useState('Pending');
+  const [tab, setTab] = useState<PaymentStatusTab>('Pending');
   const [isApproveModalOpen, setIsApproveModalOpen] = useState(false);
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
-  const [selectedPayment, setSelectedPayment] = useState<any>(null);
+  const [selectedPayment, setSelectedPayment] = useState<PaymentRow | null>(null);
   const [rejectReason, setRejectReason] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const statusFilter: PaymentStatusFilter | undefined = tab === 'All' ? undefined : statusQueryMap[tab];
+  const {
+    data: paymentsResponse,
+    isLoading,
+    isFetching,
+    error,
+  } = useGetPaymentsQuery(statusFilter);
+  const [approvePayment] = useApprovePaymentMutation();
+  const [rejectPayment] = useRejectPaymentMutation();
 
-  const [payments, setPayments] = useState([
-    { id: '1', student: 'Rahim Ahmed', exam: 'BCS Model Test 01', method: 'bKash', txnId: 'TRX987654321', sender: '01711223344', amount: '৳100', time: '10 mins ago', status: 'Pending' },
-    { id: '2', student: 'Karim Ullah', exam: 'Medical Prep Full Mock', method: 'Nagad', txnId: 'NAG123456789', sender: '01811223344', amount: '৳150', time: '45 mins ago', status: 'Pending' },
-    { id: '3', student: 'Sumaya Akter', exam: 'BCS Model Test 01', method: 'bKash', txnId: 'TRX445566778', sender: '01911223344', amount: '৳100', time: '1 hour ago', status: 'Pending' },
-  ]);
+  const payments = useMemo<PaymentRow[]>(
+    () =>
+      (paymentsResponse?.items || []).map((item: ApiPayment) => ({
+        id: item.id,
+        student: item.student?.user?.name || 'N/A',
+        exam: item.exam?.title || 'N/A',
+        method: formatMethod(item.method),
+        txnId: item.transactionId || 'N/A',
+        sender: item.senderNumber || 'N/A',
+        amount: formatAmount(item.totalAmount),
+        createdAt: item.createdAt,
+        status: statusLabelMap[item.status] || item.status || 'N/A',
+      })),
+    [paymentsResponse]
+  );
+
+  const isPageLoading = isLoading || isFetching;
+
+  const filteredPayments = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return payments;
+    return payments.filter((p) => p.txnId.toLowerCase().includes(query) || p.sender.toLowerCase().includes(query));
+  }, [payments, searchQuery]);
 
   const handleApprove = async () => {
-    setIsLoading(true);
+    if (!selectedPayment) return;
+    setIsSubmitting(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      setPayments(payments.filter(p => p.id !== selectedPayment.id));
+      await approvePayment(selectedPayment.id).unwrap();
       toast.success('Payment approved successfully!');
       setIsApproveModalOpen(false);
+      setSelectedPayment(null);
     } catch (error) {
       toast.error('Approval failed.');
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
   const handleReject = async () => {
     if (!rejectReason) return toast.error('রিজেক্ট করার কারণ লিখুন');
-    setIsLoading(true);
+    if (!selectedPayment) return;
+
+    setIsSubmitting(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      setPayments(payments.filter(p => p.id !== selectedPayment.id));
+      await rejectPayment({
+        paymentId: selectedPayment.id,
+        rejectionReason: rejectReason,
+      }).unwrap();
       toast.success('Payment rejected.');
       setIsRejectModalOpen(false);
+      setRejectReason('');
+      setSelectedPayment(null);
     } catch (error) {
       toast.error('Rejection failed.');
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
+
+  useEffect(() => {
+    if (error) {
+      toast.error('Payment data load করতে সমস্যা হয়েছে।');
+    }
+  }, [error]);
 
   return (
     <DashboardLayout>
@@ -85,6 +185,8 @@ export default function AdminPaymentsPage() {
                <input 
                  type="text" 
                  placeholder="Search by TxnID or Phone..." 
+                 value={searchQuery}
+                 onChange={(e) => setSearchQuery(e.target.value)}
                  className="bg-bg-surface border border-border rounded-xl py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 min-w-[280px]"
                />
              </div>
@@ -94,7 +196,7 @@ export default function AdminPaymentsPage() {
 
         {/* Tabs */}
         <div className="flex bg-bg-card border border-border p-1 rounded-xl w-fit">
-           {['Pending', 'Approved', 'Rejected', 'All'].map((t) => (
+           {(['Pending', 'Approved', 'Rejected', 'All'] as PaymentStatusTab[]).map((t) => (
              <button
                key={t}
                onClick={() => setTab(t)}
@@ -104,9 +206,9 @@ export default function AdminPaymentsPage() {
                )}
              >
                {t}
-               {t === 'Pending' && payments.length > 0 && (
+               {t === 'Pending' && filteredPayments.length > 0 && (
                  <span className={cn("px-1.5 py-0.5 rounded-full text-[10px]", tab === t ? "bg-white text-primary" : "bg-accent text-white")}>
-                   {payments.length}
+                   {filteredPayments.length}
                  </span>
                )}
              </button>
@@ -129,7 +231,17 @@ export default function AdminPaymentsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {payments.map((p) => (
+                {isPageLoading && (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-14 text-center">
+                      <div className="flex items-center justify-center gap-2 text-text-secondary">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Loading payments...
+                      </div>
+                    </td>
+                  </tr>
+                )}
+                {!isPageLoading && filteredPayments.map((p) => (
                   <tr key={p.id} className="text-sm hover:bg-bg-surface/50 transition-colors group">
                     <td className="px-6 py-4">
                       <div className="font-bold text-text-primary">{p.student}</div>
@@ -150,9 +262,11 @@ export default function AdminPaymentsPage() {
                       <div className="text-[10px] text-text-secondary mt-1">{p.sender}</div>
                     </td>
                     <td className="px-6 py-4 font-bold text-accent">{p.amount}</td>
-                    <td className="px-6 py-4 text-[10px] text-text-secondary uppercase font-bold tracking-wider">{p.time}</td>
+                    <td className="px-6 py-4 text-[10px] text-text-secondary uppercase font-bold tracking-wider">{formatRelativeTime(p.createdAt)}</td>
                     <td className="px-6 py-4 text-right">
                        <div className="flex items-center justify-end gap-2">
+                         {p.status === 'Pending' ? (
+                           <>
                          <Button 
                            variant="outline" 
                            size="sm" 
@@ -169,11 +283,17 @@ export default function AdminPaymentsPage() {
                          >
                            <XCircle className="w-4 h-4 mr-1" /> Reject
                          </Button>
+                           </>
+                         ) : (
+                           <Badge variant="outline" className="rounded-md text-[10px]">
+                             {p.status}
+                           </Badge>
+                         )}
                        </div>
                     </td>
                   </tr>
                 ))}
-                {payments.length === 0 && (
+                {!isPageLoading && filteredPayments.length === 0 && (
                   <tr>
                     <td colSpan={7} className="px-6 py-20 text-center">
                        <div className="flex flex-col items-center gap-4 opacity-30">
@@ -207,8 +327,8 @@ export default function AdminPaymentsPage() {
             </div>
             <DialogFooter className="sm:justify-center gap-4 pt-6">
               <Button variant="ghost" onClick={() => setIsApproveModalOpen(false)} className="px-8">না</Button>
-              <Button onClick={handleApprove} disabled={isLoading} className="bg-success hover:bg-success-dark text-white font-bold px-10">
-                {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              <Button onClick={handleApprove} disabled={isSubmitting} className="bg-success hover:bg-success-dark text-white font-bold px-10">
+                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                 হ্যাঁ, Approve করি
               </Button>
             </DialogFooter>
@@ -234,8 +354,8 @@ export default function AdminPaymentsPage() {
             </div>
             <DialogFooter className="gap-4">
               <Button variant="ghost" onClick={() => setIsRejectModalOpen(false)} className="flex-1">বাতিল</Button>
-              <Button onClick={handleReject} disabled={isLoading} className="flex-1 bg-danger hover:bg-danger-dark text-white font-bold">
-                {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : 'Confirm Reject'}
+              <Button onClick={handleReject} disabled={isSubmitting} className="flex-1 bg-danger hover:bg-danger-dark text-white font-bold">
+                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : 'Confirm Reject'}
               </Button>
             </DialogFooter>
           </DialogContent>

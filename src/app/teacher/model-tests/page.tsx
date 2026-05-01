@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,7 +10,10 @@ import {
   PlusCircle, 
   Trash2, 
   Loader2,
-  FileBadge
+  FileBadge,
+  DollarSign,
+  Edit2,
+  Eye
 } from 'lucide-react';
 import {
   Dialog,
@@ -26,6 +30,9 @@ import axiosInstance from '@/lib/axios';
 interface ModelTest {
   id: string;
   name: string;
+  price: number;
+  isFree: boolean;
+  isPublic: boolean;
   examType: { id: string; name: string };
   candidateType: { id: string; name: string };
   subject?: { id: string; name: string };
@@ -33,10 +40,14 @@ interface ModelTest {
 
 export default function ModelTestsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingModelTestId, setEditingModelTestId] = useState<string | null>(null);
   const [modelTestName, setModelTestName] = useState('');
   const [selectedExamType, setSelectedExamType] = useState('');
   const [selectedCandidateType, setSelectedCandidateType] = useState('');
   const [selectedSubject, setSelectedSubject] = useState('');
+  const [isFree, setIsFree] = useState(true);
+  const [isPublic, setIsPublic] = useState(false);
+  const [price, setPrice] = useState('0');
 
   const queryClient = useQueryClient();
 
@@ -88,11 +99,31 @@ export default function ModelTestsPage() {
     },
   });
 
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const response = await axiosInstance.patch(`/modeltest/${id}`, data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['teacher-modeltests'] });
+      toast.success('Model Test update হয়েছে!');
+      setIsModalOpen(false);
+      resetForm();
+    },
+    onError: () => {
+      toast.error('Update করতে সমস্যা হয়েছে।');
+    },
+  });
+
   const resetForm = () => {
+    setEditingModelTestId(null);
     setModelTestName('');
     setSelectedExamType('');
     setSelectedCandidateType('');
     setSelectedSubject('');
+    setIsFree(true);
+    setIsPublic(false);
+    setPrice('0');
   };
 
   const handleCreateModelTest = () => {
@@ -100,12 +131,37 @@ export default function ModelTestsPage() {
       toast.error('নাম, Exam Type এবং Candidate Type পূরণ করুন');
       return;
     }
-    createMutation.mutate({
+    if (!isFree && (!price || Number(price) <= 0)) {
+      toast.error('Paid Model Test হলে valid price দিন');
+      return;
+    }
+    const payload = {
       name: modelTestName,
       examTypeId: selectedExamType,
       candidateTypeId: selectedCandidateType,
       subjectId: selectedSubject || undefined,
-    });
+      isFree,
+      isPublic,
+      price: isFree ? 0 : parseInt(price || '0') * 100,
+    };
+
+    if (editingModelTestId) {
+      updateMutation.mutate({ id: editingModelTestId, data: payload });
+    } else {
+      createMutation.mutate(payload);
+    }
+  };
+
+  const handleEditModelTest = (modelTest: ModelTest) => {
+    setEditingModelTestId(modelTest.id);
+    setModelTestName(modelTest.name);
+    setSelectedExamType(modelTest.examType?.id || '');
+    setSelectedCandidateType(modelTest.candidateType?.id || '');
+    setSelectedSubject(modelTest.subject?.id || '');
+    setIsFree(modelTest.isFree);
+    setIsPublic(modelTest.isPublic);
+    setPrice(String(Math.round((modelTest.price || 0) / 100)));
+    setIsModalOpen(true);
   };
 
   return (
@@ -144,6 +200,12 @@ export default function ModelTestsPage() {
                         {modelTest.subject.name}
                       </Badge>
                     )}
+                    <Badge className={modelTest.isFree ? "bg-success/10 text-success" : "bg-warning/10 text-warning"}>
+                      {modelTest.isFree ? 'Free' : `৳${Math.round((modelTest.price || 0) / 100)}`}
+                    </Badge>
+                    <Badge className={modelTest.isPublic ? "bg-success/10 text-success" : "bg-warning/10 text-warning"}>
+                      {modelTest.isPublic ? 'Public' : 'Private'}
+                    </Badge>
                   </div>
                   <CardTitle className="text-xl font-display font-bold group-hover:text-primary transition-colors flex items-center gap-2">
                     <FileBadge className="w-5 h-5 text-primary" />
@@ -152,6 +214,24 @@ export default function ModelTestsPage() {
                   <p className="text-xs text-text-secondary mt-2">Candidate: {modelTest.candidateType?.name}</p>
                 </CardHeader>
                 <CardFooter className="mt-auto border-t border-border/50 pt-4 flex gap-2">
+                  <Link href={`/teacher/model-tests/${modelTest.id}/exams`}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-text-secondary hover:text-primary rounded-xl"
+                      title="View Exams"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </Button>
+                  </Link>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-text-secondary hover:text-primary rounded-xl"
+                    onClick={() => handleEditModelTest(modelTest)}
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </Button>
                   <Button variant="ghost" size="icon" className="text-text-secondary hover:text-danger rounded-xl ml-auto">
                     <Trash2 className="w-4 h-4" />
                   </Button>
@@ -167,9 +247,13 @@ export default function ModelTestsPage() {
         }}>
           <DialogContent className="bg-bg-card border-border sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle className="text-2xl font-display font-bold">নতুন Model Test</DialogTitle>
+              <DialogTitle className="text-2xl font-display font-bold">
+                {editingModelTestId ? 'Model Test Update' : 'নতুন Model Test'}
+              </DialogTitle>
               <DialogDescription className="text-text-secondary">
-                স্টুডেন্টদের জন্য একটি নতুন মডেল টেস্ট প্যাকেজ তৈরি করুন।
+                {editingModelTestId
+                  ? 'Model Test তথ্য update করুন।'
+                  : 'স্টুডেন্টদের জন্য একটি নতুন মডেল টেস্ট প্যাকেজ তৈরি করুন।'}
               </DialogDescription>
             </DialogHeader>
             
@@ -229,15 +313,58 @@ export default function ModelTestsPage() {
                   যদি এই মডেল টেস্টটি কোনো নির্দিষ্ট সাবজেক্টের অংশ হয়, তবে সিলেক্ট করুন।
                 </p>
               </div>
+
+              <div className="flex items-center justify-between p-4 rounded-xl bg-bg-surface border border-border">
+                <div className="flex items-center gap-3">
+                  <DollarSign className="w-5 h-5 text-primary" />
+                  <p className="text-sm font-bold">Free Model Test?</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={isFree}
+                  onChange={(e) => setIsFree(e.target.checked)}
+                  className="w-4 h-4"
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-4 rounded-xl bg-bg-surface border border-border">
+                <div className="flex items-center gap-3">
+                  <FileBadge className="w-5 h-5 text-primary" />
+                  <p className="text-sm font-bold">Public for Students?</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={isPublic}
+                  onChange={(e) => setIsPublic(e.target.checked)}
+                  className="w-4 h-4"
+                />
+              </div>
+
+              {!isFree && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-text-secondary ml-1">Price (Taka)</label>
+                  <input
+                    type="number"
+                    placeholder="e.g. 500"
+                    className="w-full bg-bg-surface border border-border rounded-xl py-3 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value)}
+                  />
+                </div>
+              )}
             </div>
 
             <DialogFooter>
               <Button 
                 onClick={handleCreateModelTest}
-                disabled={createMutation.isPending}
+                disabled={createMutation.isPending || updateMutation.isPending}
                 className="w-full bg-primary hover:bg-primary-light text-white font-bold h-12 rounded-xl"
               >
-                {createMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : 'Model Test তৈরি করো'}
+                {(createMutation.isPending || updateMutation.isPending) ? (
+                  <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                ) : (
+                  editingModelTestId ? 'Model Test Update করো' : 'Model Test তৈরি করো'
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>

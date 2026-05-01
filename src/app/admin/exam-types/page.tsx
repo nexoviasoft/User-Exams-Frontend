@@ -4,17 +4,7 @@ import { useState } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { 
-  Database,
-  PlusCircle,
-  Edit2,
-  Trash2,
-  Calendar,
-  Search
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import axiosInstance from '@/lib/axios';
+import { PlusCircle, Edit2, Trash2, Search, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -24,13 +14,13 @@ import {
   DialogTrigger,
   DialogFooter,
 } from '@/components/ui/dialog';
-
-interface ExamType {
-  id: string;
-  name: string;
-  description: string;
-  createdAt: string;
-}
+import {
+  useCreateExamTypeMutation,
+  useDeleteExamTypeMutation,
+  useGetExamTypesQuery,
+  useUpdateExamTypeMutation,
+  type ExamType,
+} from '@/store/slices/api/examTypesApi';
 
 export default function ExamTypesPage() {
   const [search, setSearch] = useState('');
@@ -39,87 +29,43 @@ export default function ExamTypesPage() {
   const [selectedType, setSelectedType] = useState<ExamType | null>(null);
   const [formData, setFormData] = useState({ name: '', description: '' });
 
-  const queryClient = useQueryClient();
+  const { data: examTypes = [], isLoading, isError } = useGetExamTypesQuery();
+  const [createExamType, { isLoading: isCreating }] = useCreateExamTypeMutation();
+  const [updateExamType, { isLoading: isUpdating }] = useUpdateExamTypeMutation();
+  const [deleteExamType] = useDeleteExamTypeMutation();
 
-  // Fetch Exam Types
-  const { data: examTypes = [], isLoading } = useQuery<ExamType[]>({
-    queryKey: ['examtypes'],
-    queryFn: async () => {
-      const response = await axiosInstance.get('/examtype');
-      return response.data;
-    },
-  });
-
-  // Create Mutation
-  const createMutation = useMutation({
-    mutationFn: async (data: { name: string; description: string }) => {
-      const response = await axiosInstance.post('/examtype', data);
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['examtypes'] });
-      toast.success('Exam Type created successfully!');
-      setIsAddModalOpen(false);
-      setFormData({ name: '', description: '' });
-    },
-    onError: () => {
-      toast.error('Failed to create Exam Type.');
-    },
-  });
-
-  // Update Mutation
-  const updateMutation = useMutation({
-    mutationFn: async (data: { id: string; name: string; description: string }) => {
-      const response = await axiosInstance.patch(`/examtype/${data.id}`, {
-        name: data.name,
-        description: data.description,
-      });
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['examtypes'] });
-      toast.success('Exam Type updated successfully!');
-      setIsEditModalOpen(false);
-      setSelectedType(null);
-      setFormData({ name: '', description: '' });
-    },
-    onError: () => {
-      toast.error('Failed to update Exam Type.');
-    },
-  });
-
-  // Delete Mutation
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const response = await axiosInstance.delete(`/examtype/${id}`);
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['examtypes'] });
-      toast.success('Exam Type deleted successfully!');
-    },
-    onError: () => {
-      toast.error('Failed to delete Exam Type.');
-    },
-  });
-
-  const handleAddSubmit = (e: React.FormEvent) => {
+  const handleAddSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name) {
       toast.error('Name is required');
       return;
     }
-    createMutation.mutate(formData);
+    try {
+      await createExamType(formData).unwrap();
+      toast.success('Exam Type created successfully!');
+      setIsAddModalOpen(false);
+      setFormData({ name: '', description: '' });
+    } catch {
+      toast.error('Failed to create Exam Type.');
+    }
   };
 
-  const handleEditSubmit = (e: React.FormEvent) => {
+  const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name) {
       toast.error('Name is required');
       return;
     }
     if (selectedType) {
-      updateMutation.mutate({ id: selectedType.id, ...formData });
+      try {
+        await updateExamType({ id: selectedType.id, ...formData }).unwrap();
+        toast.success('Exam Type updated successfully!');
+        setIsEditModalOpen(false);
+        setSelectedType(null);
+        setFormData({ name: '', description: '' });
+      } catch {
+        toast.error('Failed to update Exam Type.');
+      }
     }
   };
 
@@ -131,7 +77,10 @@ export default function ExamTypesPage() {
 
   const handleDeleteClick = (id: string) => {
     if (confirm('Are you sure you want to delete this exam type?')) {
-      deleteMutation.mutate(id);
+      deleteExamType(id)
+        .unwrap()
+        .then(() => toast.success('Exam Type deleted successfully!'))
+        .catch(() => toast.error('Failed to delete Exam Type.'));
     }
   };
 
@@ -199,9 +148,9 @@ export default function ExamTypesPage() {
                      <Button 
                         type="submit" 
                         className="w-full bg-primary hover:bg-primary/90 text-white rounded-xl"
-                        disabled={createMutation.isPending}
+                        disabled={isCreating}
                      >
-                       {createMutation.isPending ? 'Saving...' : 'Save Exam Type'}
+                      {isCreating ? 'Saving...' : 'Save Exam Type'}
                      </Button>
                    </DialogFooter>
                  </form>
@@ -209,6 +158,11 @@ export default function ExamTypesPage() {
              </Dialog>
           </div>
         </div>
+        {isError && (
+          <div className="text-center p-4 text-danger font-bold bg-danger/5 rounded-xl border border-danger/20">
+            Failed to load exam types.
+          </div>
+        )}
 
         {/* Types Table */}
         <Card className="border-border bg-bg-card/50 overflow-hidden">
@@ -225,7 +179,10 @@ export default function ExamTypesPage() {
                 {isLoading ? (
                   <tr>
                     <td colSpan={4} className="px-6 py-8 text-center text-text-secondary">
-                      Loading exam types...
+                      <div className="flex items-center justify-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Loading exam types...
+                      </div>
                     </td>
                   </tr>
                 ) : filteredTypes.length === 0 ? (
@@ -313,9 +270,9 @@ export default function ExamTypesPage() {
               <Button 
                 type="submit" 
                 className="w-full bg-primary hover:bg-primary/90 text-white rounded-xl"
-                disabled={updateMutation.isPending}
+                disabled={isUpdating}
               >
-                {updateMutation.isPending ? 'Updating...' : 'Update Exam Type'}
+                {isUpdating ? 'Updating...' : 'Update Exam Type'}
               </Button>
             </DialogFooter>
           </form>

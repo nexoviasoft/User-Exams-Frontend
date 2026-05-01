@@ -24,15 +24,23 @@ import {
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 
+type MenuItem = {
+  name: string;
+  icon: any;
+  path: string;
+  badge?: string;
+};
+
 export const Sidebar = ({ onAction }: { onAction?: () => void }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const pathname = usePathname();
   const { role } = useAuth();
 
-  const menuItems = {
+  const menuItems: Record<'student' | 'teacher' | 'admin', MenuItem[]> = {
     student: [
       { name: 'Dashboard', icon: LayoutDashboard, path: '/student/dashboard' },
       { name: 'সব Exam', icon: BookOpen, path: '/student/exams' },
+      { name: 'My Purchases', icon: CreditCard, path: '/student/purchases' },
       { name: 'আমার Results', icon: PieChart, path: '/student/history' },
       { name: 'Payment History', icon: CreditCard, path: '/student/payments' },
       { name: 'Profile', icon: Users, path: '/student/profile' },
@@ -40,20 +48,24 @@ export const Sidebar = ({ onAction }: { onAction?: () => void }) => {
     teacher: [
       { name: 'Dashboard', icon: LayoutDashboard, path: '/teacher/dashboard' },
       { name: 'Question Banks', icon: Database, path: '/teacher/question-banks' },
+      { name: 'Subjects', icon: BookOpen, path: '/teacher/subjects' },
+      { name: 'Model Tests', icon: FileText, path: '/teacher/model-tests' },
       { name: 'Question তৈরি', icon: PlusCircle, path: '/teacher/create-question' },
       { name: 'আমার Exams', icon: FileText, path: '/teacher/exams' },
       { name: 'Exam তৈরি', icon: PlusCircle, path: '/teacher/create-exam' },
       { name: 'Analytics', icon: PieChart, path: '/teacher/analytics' },
       { name: 'Earnings', icon: Banknote, path: '/teacher/earnings' },
+      { name: 'Profile', icon: Users, path: '/teacher/profile' },
     ],
     admin: [
       { name: 'Dashboard', icon: LayoutDashboard, path: '/admin/dashboard' },
+      { name: 'Revenue', icon: Banknote, path: '/admin/revenue' },
       { name: 'Candidate Types', icon: Database, path: '/admin/candidate-types' },
+      { name: 'Exam Types', icon: Database, path: '/admin/exam-types' },
       { name: 'Payments', icon: CreditCard, path: '/admin/payments', badge: '3' },
       { name: 'Teacher Requests', icon: UserPlus, path: '/admin/teacher-requests' },
       { name: 'Users', icon: Users, path: '/admin/users' },
-      { name: 'All Exams', icon: FileText, path: '/admin/exams' },
-      { name: 'Revenue', icon: Banknote, path: '/admin/revenue' },
+    
     ],
   };
 

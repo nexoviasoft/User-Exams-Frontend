@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
-import { Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, Loader2, ArrowRight, ShieldCheck, Zap, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { useAppDispatch } from '@/store/hooks';
 import { setAuth } from '@/store/slices/authSlice';
@@ -13,6 +13,9 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { AuthLayout } from '@/components/auth/AuthLayout';
 import axiosInstance from '@/lib/axios';
+import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 const loginSchema = z.object({
   email: z.string().email('সঠিক ইমেইল দিন'),
@@ -43,7 +46,6 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       const { email, password } = data;
-      // Backend login DTO only accepts email and password.
       const response = await axiosInstance.post('/auth/login', { email, password });
       const { user, accessToken } = response.data;
       
@@ -63,94 +65,139 @@ export default function LoginPage() {
   };
 
   return (
-    <AuthLayout tagline="আবার স্বাগতম! 👋">
-      <div className="space-y-8">
-        <div className="space-y-2">
-          <h2 className="text-4xl font-display font-bold text-text-primary">Login করুন</h2>
-          <p className="text-text-secondary">আপনার একাউন্টে প্রবেশ করতে নিচের তথ্যগুলো দিন</p>
+    <AuthLayout tagline="Welcome back to the portal! 👋">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="space-y-8 w-full max-w-lg mx-auto"
+      >
+        {/* Header Section */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Badge className="bg-primary/10 text-primary border-none font-black text-[9px] uppercase tracking-widest px-3 py-1 rounded-lg">
+              Secure Gateway
+            </Badge>
+          </div>
+          <h2 className="text-4xl font-display font-black text-text-primary tracking-tight leading-tight">
+            Account <span className="text-primary">Login</span> 🔐
+          </h2>
+          <p className="text-text-secondary text-sm font-medium">
+            Enter your credentials to access your professional workspace.
+          </p>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <div className="space-y-4">
-            {/* Email Field */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-text-secondary ml-1">Email</label>
-              <div className="relative group">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-primary transition-colors">
-                  <Mail className="w-5 h-5" />
+        {/* Premium Form Card */}
+        <div className="bg-bg-card/40 backdrop-blur-2xl border-2 border-border/50 rounded-[32px] p-8 shadow-2xl relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-primary/10 transition-colors" />
+          
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 relative z-10">
+            <div className="space-y-5">
+              {/* Email Field */}
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-text-secondary ml-1">Work Email</label>
+                <div className="relative group">
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-primary transition-colors">
+                    <Mail className="w-5 h-5" />
+                  </div>
+                  <input
+                    {...register('email')}
+                    type="email"
+                    placeholder="example@mail.com"
+                    className="w-full bg-bg-surface/50 border border-border/40 rounded-2xl py-4 pl-12 pr-4 text-text-primary font-bold focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/60 transition-all placeholder:text-text-secondary/30"
+                  />
                 </div>
-                <input
-                  {...register('email')}
-                  type="email"
-                  placeholder="example@mail.com"
-                  className="w-full bg-bg-surface border border-border rounded-2xl py-3.5 pl-12 pr-4 text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
-                />
+                {errors.email && <p className="text-[10px] font-bold text-danger ml-1 uppercase tracking-wider">{errors.email.message}</p>}
               </div>
-              {errors.email && <p className="text-xs text-danger ml-1">{errors.email.message}</p>}
-            </div>
 
-            {/* Password Field */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between ml-1">
-                <label className="text-sm font-medium text-text-secondary">Password</label>
-                <Link href="#" className="text-xs text-primary hover:underline font-medium">পাসওয়ার্ড ভুলে গেছেন?</Link>
-              </div>
-              <div className="relative group">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-primary transition-colors">
-                  <Lock className="w-5 h-5" />
+              {/* Password Field */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between ml-1">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-text-secondary">Credentials</label>
+                  <Link href="#" className="text-[10px] text-primary hover:underline font-black uppercase tracking-widest opacity-60">Forgot?</Link>
                 </div>
-                <input
-                  {...register('password')}
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="••••••••"
-                  className="w-full bg-bg-surface border border-border rounded-2xl py-3.5 pl-12 pr-12 text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary transition-colors"
-                >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
+                <div className="relative group">
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-primary transition-colors">
+                    <Lock className="w-5 h-5" />
+                  </div>
+                  <input
+                    {...register('password')}
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    className="w-full bg-bg-surface/50 border border-border/40 rounded-2xl py-4 pl-12 pr-12 text-text-primary font-bold focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/60 transition-all placeholder:text-text-secondary/30"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+                {errors.password && <p className="text-[10px] font-bold text-danger ml-1 uppercase tracking-wider">{errors.password.message}</p>}
               </div>
-              {errors.password && <p className="text-xs text-danger ml-1">{errors.password.message}</p>}
+
+              {/* Remember Me */}
+              <div className="flex items-center gap-3 ml-1">
+                <div className="relative flex items-center h-5">
+                   <input
+                     {...register('rememberMe')}
+                     type="checkbox"
+                     id="rememberMe"
+                     className="w-5 h-5 rounded-lg border-border/40 bg-bg-surface/50 text-primary focus:ring-primary/40 cursor-pointer transition-all checked:bg-primary"
+                   />
+                </div>
+                <label htmlFor="rememberMe" className="text-[10px] font-black uppercase tracking-widest text-text-secondary cursor-pointer select-none opacity-60 hover:opacity-100 transition-opacity">Keep me logged in</label>
+              </div>
             </div>
 
-            {/* Remember Me */}
-            <div className="flex items-center gap-2 ml-1">
-              <input
-                {...register('rememberMe')}
-                type="checkbox"
-                id="rememberMe"
-                className="w-4 h-4 rounded border-border bg-bg-surface text-primary focus:ring-primary/50"
-              />
-              <label htmlFor="rememberMe" className="text-sm text-text-secondary cursor-pointer select-none">মনে রাখো</label>
-            </div>
-          </div>
+            <Button 
+              type="submit" 
+              className="w-full bg-primary hover:bg-primary-light text-white font-black h-14 rounded-2xl text-xs uppercase tracking-[0.2em] shadow-xl shadow-primary/20 transition-all active:scale-[0.98] group"
+              disabled={isLoading}
+            >
+              <AnimatePresence mode="wait">
+                {isLoading ? (
+                  <motion.div 
+                    key="loader"
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    className="flex items-center justify-center"
+                  >
+                    <Loader2 className="w-5 h-5 animate-spin mr-2" /> Authenticating...
+                  </motion.div>
+                ) : (
+                  <motion.div 
+                    key="text"
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    className="flex items-center justify-center"
+                  >
+                    Authorize Access <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </Button>
 
-          <Button 
-            type="submit" 
-            className="w-full bg-accent hover:bg-accent-light text-white font-bold h-14 rounded-2xl text-lg shadow-[0_10px_20px_rgba(255,107,0,0.2)] transition-all active:scale-[0.98]"
-            disabled={isLoading}
-          >
-            {isLoading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : 'Login'}
-          </Button>
-
-          <div className="relative py-4">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-border"></div>
+            <div className="pt-6 border-t border-border/10">
+               <div className="grid grid-cols-2 gap-4">
+                  <div className="flex flex-col items-center gap-1 opacity-40 hover:opacity-100 transition-opacity">
+                     <ShieldCheck className="w-5 h-5 text-success" />
+                     <span className="text-[8px] font-black uppercase tracking-[0.1em]">Encrypted</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-1 opacity-40 hover:opacity-100 transition-opacity">
+                     <Zap className="w-5 h-5 text-accent" />
+                     <span className="text-[8px] font-black uppercase tracking-[0.1em]">Turbo Sync</span>
+                  </div>
+               </div>
             </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-bg-dark px-4 text-text-secondary font-medium tracking-widest">— অথবা —</span>
-            </div>
-          </div>
+          </form>
+        </div>
 
-          <p className="text-center text-text-secondary">
-            নতুন account? {' '}
-            <Link href="/register" className="text-primary hover:underline font-bold">Register করুন</Link>
-          </p>
-        </form>
-      </div>
+        <p className="text-center text-text-secondary text-sm font-medium">
+          New to the platform? {' '}
+          <Link href="/register" className="text-primary hover:text-primary-light font-black uppercase tracking-widest text-xs ml-1 transition-colors">
+            Register Now <Sparkles className="w-3.5 h-3.5 inline-block ml-1" />
+          </Link>
+        </p>
+      </motion.div>
     </AuthLayout>
   );
 }

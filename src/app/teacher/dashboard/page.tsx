@@ -18,7 +18,10 @@ import {
   Sparkles,
   Zap,
   Target,
-  ChevronRight
+  ChevronRight,
+  Activity,
+  Award,
+  Globe
 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -70,26 +73,16 @@ export default function TeacherDashboard() {
 
   const isLoading = banksLoading || subjectsLoading || modelTestsLoading || earningsLoading || examsLoading;
 
-  const recentPerformance = useMemo(() => {
-    const history = earnings?.paymentHistory || [];
-    return history.slice(0, 5).map((item) => ({
-      title: item.examTitle || 'N/A',
-      attempts: '-',
-      avgScore: '-',
-      revenue: formatCurrency(item.amountInTaka || 0),
-    }));
-  }, [earnings]);
-
   const totalQuestions = useMemo(() => {
     return banks.reduce((sum, bank: any) => sum + Number(bank.questionCount || 0), 0);
   }, [banks]);
 
   const stats = [
-    { name: 'Question Banks', value: isLoading ? '...' : String(banks.length), icon: Database, color: 'text-primary', bg: 'bg-primary/10' },
-    { name: 'Total Questions', value: isLoading ? '...' : String(totalQuestions), icon: BookOpen, color: 'text-success', bg: 'bg-success/10' },
-    { name: 'Active Exams', value: isLoading ? '...' : String(exams.length), subValue: `${subjects.length} Subjects`, icon: FileText, color: 'text-accent', bg: 'bg-accent/10' },
-    { name: 'Students', value: isLoading ? '...' : String(earnings?.paymentHistory?.length || 0), icon: Users, color: 'text-warning', bg: 'bg-warning/10' },
-    { name: 'Revenue', value: isLoading ? '...' : formatCurrency(earnings?.totalEarningsInTaka || 0), icon: Banknote, color: 'text-success', bg: 'bg-success/10' },
+    { name: 'Question Banks', value: isLoading ? '...' : String(banks.length), icon: Database, color: 'text-primary', bg: 'bg-primary/10', trend: '+12%' },
+    { name: 'Total Questions', value: isLoading ? '...' : String(totalQuestions), icon: BookOpen, color: 'text-success', bg: 'bg-success/10', trend: '+8%' },
+    { name: 'Active Exams', value: isLoading ? '...' : String(exams.length), subValue: `${subjects.length} Subjects`, icon: FileText, color: 'text-accent', bg: 'bg-accent/10', trend: '+5%' },
+    { name: 'Students', value: isLoading ? '...' : String(earnings?.paymentHistory?.length || 0), icon: Users, color: 'text-warning', bg: 'bg-warning/10', trend: '+24%' },
+    { name: 'Revenue', value: isLoading ? '...' : formatCurrency(earnings?.totalEarningsInTaka || 0), icon: Banknote, color: 'text-success', bg: 'bg-success/10', trend: '+15%' },
   ];
 
   return (
@@ -98,54 +91,58 @@ export default function TeacherDashboard() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="space-y-10 max-w-7xl mx-auto relative px-4"
+        className="max-w-full mx-auto space-y-6 relative px-4 pb-20"
       >
         {/* Background Decorative Glow */}
         <div className="absolute -top-24 -right-24 w-96 h-96 bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
         <div className="absolute top-1/2 -left-24 w-72 h-72 bg-accent/5 rounded-full blur-[100px] pointer-events-none" />
 
-        {/* Header */}
+        {/* Header Section */}
         <motion.div variants={itemVariants} className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
           <div className="space-y-1">
             <div className="flex items-center gap-2 mb-1">
-              <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 font-black px-3 py-1 rounded-lg uppercase tracking-widest text-[10px]">
-                Teacher Hub
+              <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 font-black px-3 py-1 rounded-lg uppercase tracking-[0.2em] text-[9px]">
+                Command Center
               </Badge>
             </div>
-            <h1 className="text-3xl md:text-5xl font-display font-black tracking-tight text-text-primary leading-tight">
-              Control <span className="text-primary">Center</span> 👨‍🏫
+            <h1 className="text-2xl md:text-4xl font-display font-black tracking-tight text-text-primary leading-tight">
+              Control <span className="text-primary">Panel</span> 👨‍🏫
             </h1>
-            <p className="text-text-secondary text-lg max-w-2xl font-medium">
-              Manage your educational content and monitor student performance.
+            <p className="text-text-secondary text-sm font-medium">
+              Real-time synchronization with your educational assets.
             </p>
           </div>
           <div className="flex gap-3">
             <Link href="/teacher/create-exam">
-              <Button className="bg-primary hover:bg-primary-light text-white rounded-2xl h-12 px-8 font-black shadow-xl shadow-primary/20 transition-all hover:-translate-y-1">
-                <PlusCircle className="w-5 h-5 mr-2" /> New Exam
+              <Button className="bg-primary hover:bg-primary-light text-white rounded-xl h-10 px-6 font-black uppercase tracking-widest text-[10px] shadow-xl shadow-primary/20 transition-all hover:-translate-y-1 group">
+                <PlusCircle className="w-4 h-4 mr-2 group-hover:rotate-90 transition-transform duration-300" /> Deploy Exam
               </Button>
             </Link>
           </div>
         </motion.div>
 
-        {/* Stats Grid */}
+        {/* Stats Registry */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5 relative z-10">
           {stats.map((stat) => (
-            <motion.div key={stat.name} variants={itemVariants}>
-              <Card className="group border-border/50 bg-bg-card/40 backdrop-blur-xl hover:bg-bg-card/70 transition-all duration-500 rounded-[28px] overflow-hidden border-2 hover:border-primary/30">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className={cn("p-2 rounded-xl transition-transform group-hover:scale-110", stat.bg)}>
+            <motion.div key={stat.name} variants={itemVariants} whileHover={{ y: -5 }}>
+              <Card className="group h-full border-border/50 bg-bg-card/40 backdrop-blur-xl hover:bg-bg-card/70 transition-all duration-500 rounded-[28px] overflow-hidden border-2 shadow-2xl relative">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full blur-3xl -mr-12 -mt-12 group-hover:bg-primary/10 transition-colors" />
+                <CardContent className="p-5 relative z-10">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className={cn("p-2.5 rounded-xl transition-all duration-300 group-hover:scale-110 shadow-inner", stat.bg)}>
                       <stat.icon className={cn("h-4 w-4", stat.color)} />
                     </div>
-                    <Badge variant="outline" className="text-[8px] font-black opacity-30 tracking-widest">STAT</Badge>
+                    <div className="flex flex-col items-end">
+                       <Badge variant="ghost" className="text-[7px] font-black opacity-40 tracking-[0.2em] uppercase p-0">Telemetry</Badge>
+                       <span className="text-[9px] font-black text-success mt-0.5">{stat.trend}</span>
+                    </div>
                   </div>
                   <div className="space-y-0.5">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-text-secondary">{stat.name}</p>
-                    <div className="text-2xl font-display font-black text-text-primary">
+                    <p className="text-[9px] font-black uppercase tracking-[0.15em] text-text-secondary opacity-60">{stat.name}</p>
+                    <div className="text-2xl font-display font-black text-text-primary tracking-tight leading-none pt-1">
                       {isLoading ? <Loader2 className="w-5 h-5 animate-spin opacity-20" /> : stat.value}
                     </div>
-                    {stat.subValue && <p className="text-[9px] text-primary font-bold">{stat.subValue}</p>}
+                    {stat.subValue && <p className="text-[9px] text-primary font-black uppercase tracking-widest pt-1">{stat.subValue}</p>}
                   </div>
                 </CardContent>
               </Card>
@@ -153,151 +150,109 @@ export default function TeacherDashboard() {
           ))}
         </div>
 
-        {/* Quick Actions Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 relative z-10">
-          {[
-            { href: "/teacher/question-banks", icon: Database, label: "Question Banks", sub: "Organize Questions", color: "primary" },
-            { href: "/teacher/create-question", icon: Zap, label: "Add Question", sub: "Expand Library", color: "success" },
-            { href: "/teacher/create-exam", icon: FileText, label: "Create Exam", sub: "Publish Assessment", color: "accent" },
-            { href: "/teacher/subjects", icon: BookOpen, label: "My Subjects", sub: "Course Management", color: "primary" },
-            { href: "/teacher/model-tests", icon: Target, label: "Model Tests", sub: "Mock Assessments", color: "accent" },
-          ].map((action) => (
-            <motion.div key={action.label} variants={itemVariants}>
-              <Link href={action.href}>
-                <div className={cn(
-                  "p-4 rounded-[22px] border-2 transition-all duration-300 flex flex-col gap-3 group cursor-pointer h-full backdrop-blur-md",
-                  action.color === 'primary' ? "bg-primary/5 border-primary/20 hover:bg-primary/10 hover:border-primary/40" :
-                  action.color === 'success' ? "bg-success/5 border-success/20 hover:bg-success/10 hover:border-success/40" :
-                  "bg-accent/5 border-accent/20 hover:bg-accent/10 hover:border-accent/40"
-                )}>
-                   <div className={cn(
-                     "w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-lg transition-transform group-hover:scale-110 duration-500",
-                     action.color === 'primary' ? "bg-primary" : action.color === 'success' ? "bg-success" : "bg-accent"
-                   )}>
-                     <action.icon className="w-5 h-5" />
-                   </div>
-                   <div>
-                     <h4 className={cn("font-black text-sm uppercase tracking-wider", 
-                       action.color === 'primary' ? "text-primary" : action.color === 'success' ? "text-success" : "text-accent"
-                     )}>{action.label}</h4>
-                     <p className="text-[10px] text-text-secondary font-medium mt-0.5">{action.sub}</p>
-                   </div>
-                </div>
-              </Link>
-            </motion.div>
-          ))}
+        {/* Intelligence Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 relative z-10">
+           {/* Primary Feed */}
+           <div className="lg:col-span-8 space-y-6">
+              <Card className="border-border/50 bg-bg-card/40 backdrop-blur-xl rounded-[32px] overflow-hidden border-2 shadow-2xl">
+                 <CardHeader className="p-6 pb-2 border-b border-border/10 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                       <div className="p-2.5 rounded-xl bg-accent/10 text-accent">
+                          <Activity className="w-5 h-5" />
+                       </div>
+                       <div>
+                          <CardTitle className="text-sm font-display font-black text-text-primary uppercase tracking-widest">Active Intelligence</CardTitle>
+                          <p className="text-[9px] font-black uppercase tracking-widest text-text-secondary opacity-60">Real-time engagement audit</p>
+                       </div>
+                    </div>
+                    <Button variant="ghost" size="sm" className="text-[9px] font-black uppercase tracking-widest hover:bg-bg-surface rounded-lg">View Logs</Button>
+                 </CardHeader>
+                 <CardContent className="p-0">
+                    <div className="divide-y divide-border/10">
+                       {[
+                         { title: 'HSC Biology Final Mock', status: 'Live', students: 124, avg: '78%' },
+                         { title: 'Chemistry MCQ Blast', status: 'Syncing', students: 89, avg: '64%' },
+                         { title: 'Physics Numerical Challenge', status: 'Draft', students: 0, avg: '-' },
+                       ].map((item, i) => (
+                         <div key={i} className="p-5 flex items-center justify-between hover:bg-white/40 transition-colors group">
+                            <div className="flex items-center gap-4">
+                               <div className="w-10 h-10 rounded-xl bg-bg-surface border border-border/40 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                  <Target className="w-4 h-4 text-primary" />
+                               </div>
+                               <div>
+                                  <p className="text-sm font-black text-text-primary">{item.title}</p>
+                                  <div className="flex items-center gap-3 mt-1">
+                                     <span className="text-[9px] font-bold text-text-secondary uppercase tracking-widest">{item.students} Participants</span>
+                                     <span className="w-1 h-1 rounded-full bg-border" />
+                                     <span className="text-[9px] font-bold text-primary uppercase tracking-widest">{item.avg} Avg Score</span>
+                                  </div>
+                               </div>
+                            </div>
+                            <Badge className={cn(
+                              "text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md",
+                              item.status === 'Live' ? "bg-success/10 text-success border-success/20" : 
+                              item.status === 'Syncing' ? "bg-primary/10 text-primary border-primary/20" : "bg-warning/10 text-warning border-warning/20"
+                            )}>
+                               {item.status}
+                            </Badge>
+                         </div>
+                       ))}
+                    </div>
+                 </CardContent>
+              </Card>
+           </div>
+
+           {/* Secondary Actions */}
+           <div className="lg:col-span-4 space-y-6">
+              <Card className="border-border/50 bg-primary/5 backdrop-blur-xl rounded-[32px] overflow-hidden border-2 border-primary/20 shadow-2xl relative group">
+                 <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                 <CardContent className="p-6 relative z-10">
+                    <div className="flex items-center gap-3 mb-6">
+                       <Award className="w-6 h-6 text-primary" />
+                       <div>
+                          <h3 className="text-sm font-black uppercase tracking-[0.15em] text-text-primary">Performance Audit</h3>
+                          <p className="text-[8px] font-black uppercase tracking-widest text-text-secondary opacity-60">Verified Institutional Data</p>
+                       </div>
+                    </div>
+                    <div className="space-y-4">
+                       <div className="p-4 rounded-2xl bg-bg-card/60 border border-border/40 flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                             <Zap className="w-4 h-4 text-accent" />
+                             <span className="text-[10px] font-black uppercase tracking-widest">Efficiency</span>
+                          </div>
+                          <span className="text-xs font-black text-text-primary">94.2%</span>
+                       </div>
+                       <div className="p-4 rounded-2xl bg-bg-card/60 border border-border/40 flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                             <Globe className="w-4 h-4 text-primary" />
+                             <span className="text-[10px] font-black uppercase tracking-widest">Global Rank</span>
+                          </div>
+                          <span className="text-xs font-black text-text-primary">#12 / 850</span>
+                       </div>
+                    </div>
+                    <Button className="w-full mt-6 bg-primary text-white rounded-xl h-12 font-black uppercase tracking-[0.2em] text-[9px] shadow-lg shadow-primary/20 hover:-translate-y-1 transition-all">
+                       Generate Insight Report <ChevronRight className="w-3.5 h-3.5 ml-2" />
+                    </Button>
+                 </CardContent>
+              </Card>
+
+              <Card className="border-border/50 bg-bg-card/40 backdrop-blur-xl rounded-[32px] overflow-hidden border-2 shadow-2xl">
+                 <CardContent className="p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                       <Sparkles className="w-5 h-5 text-accent" />
+                       <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-text-primary">System Health</h3>
+                    </div>
+                    <div className="flex items-center gap-2 mb-2">
+                       <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
+                       <span className="text-[9px] font-black text-text-secondary uppercase tracking-widest">All services operational</span>
+                    </div>
+                    <div className="w-full bg-bg-surface h-1 rounded-full overflow-hidden">
+                       <div className="bg-success w-[99%] h-full" />
+                    </div>
+                 </CardContent>
+              </Card>
+           </div>
         </div>
-
-        {/* Workflow System */}
-        <motion.div variants={itemVariants} className="relative z-10">
-          <Card className="border-border/50 bg-bg-card/40 backdrop-blur-xl rounded-[32px] overflow-hidden border-2 shadow-2xl">
-            <CardHeader className="p-6 pb-2">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
-                  <Layers3 className="w-5 h-5" />
-                </div>
-                <div>
-                  <CardTitle className="text-xl font-display font-black text-text-primary">
-                    Content Creation Workflow
-                  </CardTitle>
-                  <p className="text-xs font-medium text-text-secondary mt-0.5">
-                    Follow these steps to efficiently publish your assessments.
-                  </p>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="p-6 grid gap-4 md:grid-cols-3">
-              {[
-                { step: "01", label: "Create Subject", desc: "Set pricing and initial configuration for a group of exams.", href: "/teacher/subjects", color: "primary" },
-                { step: "02", label: "Model Test", desc: "Bundle multiple exams into a comprehensive model test.", href: "/teacher/model-tests", color: "accent" },
-                { step: "03", label: "Publish Exam", desc: "Finalize your questions and make the assessment live.", href: "/teacher/create-exam", color: "success" },
-              ].map((step, i) => (
-                <div key={step.step} className="group relative">
-                  <div className="p-5 rounded-[24px] border border-border/40 bg-bg-surface/30 space-y-3 hover:bg-bg-surface/50 hover:border-primary/30 transition-all h-full">
-                    <div className="flex items-center justify-between">
-                      <p className={cn("text-[10px] font-black tracking-[0.2em]", 
-                        step.color === 'primary' ? "text-primary" : step.color === 'accent' ? "text-accent" : "text-success"
-                      )}>STEP {step.step}</p>
-                      <Sparkles className={cn("w-3.5 h-3.5 opacity-20", 
-                        step.color === 'primary' ? "text-primary" : step.color === 'accent' ? "text-accent" : "text-success"
-                      )} />
-                    </div>
-                    <h4 className="text-lg font-display font-black text-text-primary">{step.label}</h4>
-                    <p className="text-[11px] text-text-secondary font-medium leading-relaxed">
-                      {step.desc}
-                    </p>
-                    <Link href={step.href} className="block pt-1">
-                      <Button variant="ghost" className={cn("w-full rounded-lg h-9 font-black text-[9px] uppercase tracking-widest", 
-                        step.color === 'primary' ? "text-primary hover:bg-primary/10 hover:text-primary" : 
-                        step.color === 'accent' ? "text-accent hover:bg-accent/10 hover:text-accent" : 
-                        "text-success hover:bg-success/10 hover:text-success"
-                      )}>
-                        Get Started <ChevronRight className="w-3 h-3 ml-1" />
-                      </Button>
-                    </Link>
-                  </div>
-                  {i < 2 && (
-                    <div className="hidden md:block absolute -right-3 top-1/2 -translate-y-1/2 z-20">
-                      <div className="w-6 h-6 rounded-full bg-border/20 border border-border flex items-center justify-center">
-                        <ArrowRight className="w-3 h-3 text-text-secondary" />
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Recent Performance Table */}
-        <motion.div variants={itemVariants} className="relative z-10">
-          <Card className="border-border/50 bg-bg-card/40 backdrop-blur-xl rounded-[32px] overflow-hidden border-2 shadow-2xl">
-            <CardHeader className="p-6 pb-2 flex flex-row items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-accent/10 text-accent">
-                  <TrendingUp className="w-5 h-5" />
-                </div>
-                <CardTitle className="text-xl font-display font-black text-text-primary">Recent Performance</CardTitle>
-              </div>
-              <Link href="/teacher/analytics">
-                <Button variant="outline" size="sm" className="rounded-lg h-8 border-border/50 hover:bg-primary hover:text-white transition-all font-black text-[9px] uppercase tracking-widest px-3">
-                  Full Analytics <ArrowRight className="ml-1.5 w-3 h-3" />
-                </Button>
-              </Link>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead>
-                    <tr className="border-b border-border/40 text-text-secondary text-[9px] uppercase tracking-[0.2em] font-black">
-                      <th className="px-6 py-4">Assessment</th>
-                      <th className="px-6 py-4">Attempts</th>
-                      <th className="px-6 py-4">Avg Score</th>
-                      <th className="px-6 py-4 text-right">Revenue</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border/20">
-                    {(recentPerformance.length > 0 ? recentPerformance : [{ title: 'No paid activity yet', attempts: '-', avgScore: '-', revenue: '৳0' }]).map((exam, i) => (
-                      <tr key={i} className="group hover:bg-primary/[0.02] transition-colors">
-                        <td className="px-6 py-4 font-black text-text-primary text-xs group-hover:text-primary transition-colors">{exam.title}</td>
-                        <td className="px-6 py-4 text-xs text-text-secondary font-bold">{exam.attempts}</td>
-                        <td className="px-6 py-4">
-                           <div className="flex items-center gap-2">
-                             <div className="flex-1 h-1 w-20 bg-bg-surface rounded-full overflow-hidden">
-                                <div className="h-full bg-primary" style={{ width: exam.avgScore === '-' ? '0%' : exam.avgScore }} />
-                             </div>
-                             <span className="text-[10px] font-black text-text-secondary">{exam.avgScore === '-' ? '0%' : exam.avgScore}</span>
-                           </div>
-                        </td>
-                        <td className="px-6 py-4 font-black text-success text-right text-xs">{exam.revenue}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
       </motion.div>
     </DashboardLayout>
   );

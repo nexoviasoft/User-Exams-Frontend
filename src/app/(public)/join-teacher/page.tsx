@@ -5,7 +5,30 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
-import { Mail, Lock, User, Eye, EyeOff, Loader2, BookOpen, PenTool, TrendingUp, Phone, Monitor, MapPin, Camera } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { 
+  Mail, 
+  Lock, 
+  User, 
+  Eye, 
+  EyeOff, 
+  Loader2, 
+  BookOpen, 
+  PenTool, 
+  TrendingUp, 
+  Phone, 
+  Monitor, 
+  MapPin, 
+  Camera,
+  CheckCircle2,
+  Sparkles,
+  ArrowRight,
+  ArrowLeft,
+  ShieldCheck,
+  Zap,
+  Star,
+  PlusCircle
+} from 'lucide-react';
 import Link from 'next/link';
 import { useAppDispatch } from '@/store/hooks';
 import { setAuth } from '@/store/slices/authSlice';
@@ -14,6 +37,9 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { GraduationCap } from 'lucide-react';
 import axiosInstance from '@/lib/axios';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Navbar } from '@/components/landing/Navbar';
+import { Footer } from '@/components/landing/Footer';
 
 const registerSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -104,288 +130,386 @@ export default function JoinTeacherPage() {
     }
   };
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        type: "spring",
+        stiffness: 100,
+        damping: 15
+      }
+    }
+  };
+
   const steps = [
     {
       icon: BookOpen,
       title: 'Create Question Bank',
-      desc: 'Add thousands of MCQs easily and categorize them.'
+      desc: 'Add thousands of MCQs easily and categorize them with ease.',
+      color: 'text-primary',
+      bg: 'bg-primary/10'
     },
     {
-      icon: PenTool,
+      icon: Zap,
       title: 'Setup Exams',
-      desc: 'Create live exams, set timers, and define pricing.'
+      desc: 'Create live exams, set timers, and define your own pricing.',
+      color: 'text-accent',
+      bg: 'bg-accent/10'
     },
     {
       icon: TrendingUp,
       title: 'Earn & Analyze',
-      desc: 'Students take your exams, and you earn directly to your dashboard.'
+      desc: 'Students take your exams, and you earn directly to your dashboard.',
+      color: 'text-success',
+      bg: 'bg-success/10'
     }
   ];
 
   return (
-    <div className="min-h-screen bg-bg-dark text-text-primary flex flex-col md:flex-row">
-      {/* Left side: Steps & Info */}
-      <div className="w-full md:w-5/12 lg:w-1/3 bg-bg-surface p-8 md:p-12 flex flex-col justify-center relative overflow-hidden border-b md:border-b-0 md:border-r border-border hidden md:flex">
-        {/* Decorative background elements */}
-        <div className="absolute top-[-10%] left-[-10%] w-64 h-64 bg-accent/20 rounded-full blur-[80px]" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-64 h-64 bg-primary/20 rounded-full blur-[80px]" />
-        
-        <div className="relative z-10 max-w-lg mx-auto">
-          <Link href="/" className="inline-flex items-center gap-2 mb-12">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <GraduationCap className="text-white w-5 h-5" />
-            </div>
-            <span className="font-display font-bold text-xl tracking-tight">
-              PolyExam<span className="text-primary">Buzz</span><span className="text-accent">.</span>
-            </span>
-          </Link>
+    <div className="min-h-screen bg-bg-dark text-text-primary relative overflow-hidden flex flex-col">
+      <Navbar />
+      
+      {/* Back Button */}
+      <Link 
+        href="/"
+        className="fixed top-24 left-4 md:left-8 z-50 group flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 backdrop-blur-xl text-white hover:bg-white/10 transition-all shadow-xl active:scale-95"
+      >
+        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+        <span className="text-xs font-black uppercase tracking-widest">Back</span>
+      </Link>
+      
+      {/* Background Decorative Glows */}
+      <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-primary/20 rounded-full blur-[120px] animate-pulse pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[400px] h-[400px] bg-accent/15 rounded-full blur-[100px] animate-pulse pointer-events-none" style={{ animationDelay: '1s' }} />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(circle_at_center,transparent_0%,rgba(10,15,30,0.8)_100%)] pointer-events-none" />
 
-          <h1 className="text-3xl md:text-5xl font-display font-bold mb-6">
-            Join as a <span className="text-accent">Teacher</span>
-          </h1>
-          <p className="text-text-secondary text-lg mb-12">
-            Empower students with your knowledge and build a new source of income. Here is how it works:
-          </p>
-
-          <div className="space-y-8">
-            {steps.map((step, i) => (
-              <div key={i} className="flex gap-4 items-start">
-                <div className="w-12 h-12 rounded-xl bg-bg-dark border border-border flex items-center justify-center shrink-0 shadow-sm">
-                  <step.icon className="w-6 h-6 text-accent" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-lg mb-1">{step.title}</h3>
-                  <p className="text-text-secondary">{step.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Right side: Form */}
-      <div className="w-full md:w-7/12 lg:w-2/3 p-4 sm:p-8 md:p-12 flex items-center justify-center h-screen overflow-y-auto">
-        <div className="w-full max-w-2xl space-y-8 py-8">
-          
-          {/* Mobile Header (Hidden on Desktop) */}
-          <div className="md:hidden flex flex-col items-center text-center space-y-4 mb-8">
-            <Link href="/" className="inline-flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                <GraduationCap className="text-white w-5 h-5" />
-              </div>
-              <span className="font-display font-bold text-xl tracking-tight">
-                PolyExam<span className="text-primary">Buzz</span><span className="text-accent">.</span>
-              </span>
-            </Link>
-            <h1 className="text-3xl font-display font-bold">
-              Join as a <span className="text-accent">Teacher</span>
-            </h1>
-          </div>
-
-          <div className="space-y-2">
-            <h2 className="text-3xl font-display font-bold">Create Account</h2>
-            <p className="text-text-secondary">Fill the form below to get started</p>
-          </div>
-
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            
-            {/* Photo Upload */}
-            <div className="flex flex-col items-center sm:items-start space-y-3">
-              <label className="text-sm font-medium text-text-secondary ml-1">Profile Photo</label>
-              <div className="flex items-center gap-6">
-                <div className="w-24 h-24 rounded-full border-2 border-dashed border-border flex items-center justify-center overflow-hidden bg-bg-surface relative group">
-                  {previewImage ? (
-                    <img src={previewImage} alt="Preview" className="w-full h-full object-cover" />
-                  ) : (
-                    <Camera className="w-8 h-8 text-text-secondary" />
-                  )}
-                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                    <Camera className="w-6 h-6 text-white" />
-                  </div>
-                  <input 
-                    type="file" 
-                    accept="image/*"
-                    onChange={handlePhotoChange}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  />
-                </div>
-                <div className="text-sm text-text-secondary">
-                  <p>Upload a professional photo.</p>
-                  <p className="text-xs mt-1">Format: JPG, PNG, max 2MB.</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Name Field */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-text-secondary ml-1">Full Name</label>
-                <div className="relative group">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-accent transition-colors">
-                    <User className="w-5 h-5" />
-                  </div>
-                  <input
-                    {...register('name')}
-                    type="text"
-                    placeholder="Your Name"
-                    className="w-full bg-bg-surface border border-border rounded-2xl py-3.5 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all"
-                  />
-                </div>
-                {errors.name && <p className="text-xs text-danger ml-1">{errors.name.message}</p>}
-              </div>
-
-              {/* Email Field */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-text-secondary ml-1">Email</label>
-                <div className="relative group">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-accent transition-colors">
-                    <Mail className="w-5 h-5" />
-                  </div>
-                  <input
-                    {...register('email')}
-                    type="email"
-                    placeholder="example@mail.com"
-                    className="w-full bg-bg-surface border border-border rounded-2xl py-3.5 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all"
-                  />
-                </div>
-                {errors.email && <p className="text-xs text-danger ml-1">{errors.email.message}</p>}
-              </div>
-
-              {/* Phone Field */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-text-secondary ml-1">Phone Number</label>
-                <div className="relative group">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-accent transition-colors">
-                    <Phone className="w-5 h-5" />
-                  </div>
-                  <input
-                    {...register('phone')}
-                    type="tel"
-                    placeholder="01XXXXXXXXX"
-                    className="w-full bg-bg-surface border border-border rounded-2xl py-3.5 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all"
-                  />
-                </div>
-                {errors.phone && <p className="text-xs text-danger ml-1">{errors.phone.message}</p>}
-              </div>
-
-              {/* Education Field */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-text-secondary ml-1">Education</label>
-                <div className="relative group">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-accent transition-colors">
-                    <BookOpen className="w-5 h-5" />
-                  </div>
-                  <input
-                    {...register('education')}
-                    type="text"
-                    placeholder="BSc in CSE, DU"
-                    className="w-full bg-bg-surface border border-border rounded-2xl py-3.5 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all"
-                  />
-                </div>
-                {errors.education && <p className="text-xs text-danger ml-1">{errors.education.message}</p>}
-              </div>
-
-              {/* Platform Name Field */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-text-secondary ml-1">Platform/Organization Name</label>
-                <div className="relative group">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-accent transition-colors">
-                    <Monitor className="w-5 h-5" />
-                  </div>
-                  <input
-                    {...register('platformName')}
-                    type="text"
-                    placeholder="Exam Buzz Academy"
-                    className="w-full bg-bg-surface border border-border rounded-2xl py-3.5 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all"
-                  />
-                </div>
-                {errors.platformName && <p className="text-xs text-danger ml-1">{errors.platformName.message}</p>}
-              </div>
-
-              {/* Location Field */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-text-secondary ml-1">Location</label>
-                <div className="relative group">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-accent transition-colors">
-                    <MapPin className="w-5 h-5" />
-                  </div>
-                  <input
-                    {...register('location')}
-                    type="text"
-                    placeholder="Dhaka, Bangladesh"
-                    className="w-full bg-bg-surface border border-border rounded-2xl py-3.5 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all"
-                  />
-                </div>
-                {errors.location && <p className="text-xs text-danger ml-1">{errors.location.message}</p>}
-              </div>
-
-              {/* Password Field */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-text-secondary ml-1">Password</label>
-                <div className="relative group">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-accent transition-colors">
-                    <Lock className="w-5 h-5" />
-                  </div>
-                  <input
-                    {...register('password')}
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="••••••••"
-                    className="w-full bg-bg-surface border border-border rounded-2xl py-3.5 pl-12 pr-12 focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary transition-colors"
-                  >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
-                </div>
-                {/* Strength Indicator */}
-                <div className="h-1.5 w-full bg-bg-surface rounded-full mt-2 overflow-hidden border border-border">
-                  <div 
-                    className={cn(
-                      "h-full transition-all duration-500",
-                      strength <= 25 ? "bg-danger" : strength <= 50 ? "bg-warning" : strength <= 75 ? "bg-accent" : "bg-success"
-                    )}
-                    style={{ width: `${strength}%` }}
-                  />
-                </div>
-                {errors.password && <p className="text-xs text-danger ml-1">{errors.password.message}</p>}
-              </div>
-
-              {/* Confirm Password */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-text-secondary ml-1">Confirm Password</label>
-                <div className="relative group">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-accent transition-colors">
-                    <Lock className="w-5 h-5" />
-                  </div>
-                  <input
-                    {...register('confirmPassword')}
-                    type="password"
-                    placeholder="••••••••"
-                    className="w-full bg-bg-surface border border-border rounded-2xl py-3.5 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all"
-                  />
-                </div>
-                {errors.confirmPassword && <p className="text-xs text-danger ml-1">{errors.confirmPassword.message}</p>}
-              </div>
-            </div>
-
-            <Button 
-              type="submit" 
-              className="w-full bg-accent hover:bg-accent-light text-white font-bold h-14 rounded-2xl text-lg shadow-[0_10px_20px_rgba(255,107,0,0.2)] transition-all active:scale-[0.98] mt-4"
-              disabled={isLoading}
+      <main className="flex-1 flex flex-col md:flex-row pt-20">
+        {/* Left side: Steps & Info */}
+        <div className="w-full md:w-5/12 lg:w-[45%] p-8 md:p-12 lg:p-20 flex flex-col justify-center relative z-10 border-b md:border-b-0 md:border-r border-border/30 backdrop-blur-3xl bg-bg-dark/40">
+          <div className="max-w-xl mx-auto md:mx-0">
+            <motion.div 
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="mb-12"
             >
-              {isLoading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : 'Register as Teacher'}
-            </Button>
+              <Link href="/" className="inline-flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center shadow-lg shadow-primary/20 ring-4 ring-primary/10">
+                  <GraduationCap className="text-white w-6 h-6" />
+                </div>
+                <span className="font-display font-black text-2xl tracking-tighter text-white">
+                  PolyExam<span className="text-primary">Buzz</span><span className="text-accent">.</span>
+                </span>
+              </Link>
+            </motion.div>
 
-            <p className="text-center text-text-secondary">
-              Already have an account? {' '}
-              <Link href="/login" className="text-accent hover:underline font-bold">Login</Link>
-            </p>
-          </form>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+            >
+              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 font-black px-3 py-1 rounded-lg uppercase tracking-[0.2em] text-[10px] mb-6 inline-block">
+                For Educators
+              </Badge>
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-black mb-6 leading-tight tracking-tight text-white">
+                Empower Students, <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-accent to-primary-light bg-[length:200%_auto] animate-gradient">Grow Your Brand.</span>
+              </h1>
+              <p className="text-text-secondary text-lg mb-12 font-medium leading-relaxed">
+                Join Bangladesh's most advanced examination platform. Share your knowledge with thousands and build a sustainable teaching career.
+              </p>
+            </motion.div>
+
+            <motion.div 
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              className="space-y-6"
+            >
+              {steps.map((step, i) => (
+                <motion.div 
+                  key={i} 
+                  variants={itemVariants}
+                  whileHover={{ x: 10 }}
+                  className="group flex gap-5 items-center p-4 rounded-[24px] bg-bg-surface/30 border border-border/20 backdrop-blur-xl transition-all hover:bg-bg-surface/50 hover:border-primary/30"
+                >
+                  <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-lg transition-transform group-hover:scale-110", step.bg)}>
+                    <step.icon className={cn("w-7 h-7", step.color)} />
+                  </div>
+                  <div>
+                    <h3 className="font-black text-lg mb-0.5 group-hover:text-primary transition-colors text-white">{step.title}</h3>
+                    <p className="text-text-secondary text-sm font-medium leading-relaxed">{step.desc}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.8 }}
+              className="mt-12 flex items-center gap-8"
+            >
+              <div className="flex flex-col">
+                <span className="text-2xl font-black text-text-primary">500+</span>
+                <span className="text-[10px] uppercase tracking-widest text-text-secondary font-black">Active Teachers</span>
+              </div>
+              <div className="w-px h-10 bg-border/50" />
+              <div className="flex flex-col">
+                <span className="text-2xl font-black text-text-primary">50k+</span>
+                <span className="text-[10px] uppercase tracking-widest text-text-secondary font-black">Exams Taken</span>
+              </div>
+            </motion.div>
+          </div>
         </div>
-      </div>
+
+        {/* Right side: Form */}
+        <div className="w-full md:w-7/12 lg:w-[55%] p-4 sm:p-8 md:p-12 lg:p-20 flex items-center justify-center relative z-10">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="w-full max-w-2xl space-y-8 py-8 relative"
+          >
+            {/* Form Header */}
+            <div className="space-y-2 text-center md:text-left">
+              <h2 className="text-3xl md:text-4xl font-display font-black tracking-tight text-white">Create Your <span className="text-primary">Teacher Portal</span></h2>
+              <p className="text-text-secondary font-medium text-lg">Step into the future of digital education in seconds.</p>
+            </div>
+
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              
+              {/* Photo Upload */}
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-6 rounded-[32px] bg-bg-surface/20 border border-border/20 backdrop-blur-xl flex flex-col sm:flex-row items-center gap-8 group"
+              >
+                <div className="relative">
+                  <div className="w-32 h-32 rounded-[40px] border-4 border-border/50 flex items-center justify-center overflow-hidden bg-bg-surface relative group-hover:border-primary/50 transition-all shadow-2xl">
+                    {previewImage ? (
+                      <img src={previewImage} alt="Preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="flex flex-col items-center gap-2">
+                        <Camera className="w-10 h-10 text-text-secondary" />
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                      <Sparkles className="w-8 h-8 text-white animate-pulse" />
+                    </div>
+                    <input 
+                      type="file" 
+                      accept="image/*"
+                      onChange={handlePhotoChange}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                    />
+                  </div>
+                  <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-primary rounded-2xl flex items-center justify-center shadow-xl border-4 border-bg-dark text-white">
+                    <PlusCircle className="w-5 h-5" />
+                  </div>
+                </div>
+                
+                <div className="text-center sm:text-left">
+                  <h4 className="font-black text-lg mb-1 text-white">Professional Photo</h4>
+                  <p className="text-text-secondary text-sm mb-2 font-medium">This helps students identify and trust your platform.</p>
+                  <div className="flex gap-2 flex-wrap justify-center sm:justify-start">
+                     <Badge variant="outline" className="text-[9px] uppercase tracking-widest font-black py-0.5 border-border/40 text-text-secondary">JPG / PNG</Badge>
+                     <Badge variant="outline" className="text-[9px] uppercase tracking-widest font-black py-0.5 border-border/40 text-text-secondary">Max 2MB</Badge>
+                  </div>
+                </div>
+              </motion.div>
+
+              <motion.div 
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+                className="grid grid-cols-1 sm:grid-cols-2 gap-5"
+              >
+                {/* Name Field */}
+                <motion.div variants={itemVariants} className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-text-secondary ml-1">Full Name</label>
+                  <div className="relative group">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-secondary group-focus-within:text-primary transition-colors" />
+                    <input
+                      {...register('name')}
+                      type="text"
+                      placeholder="Enter your name"
+                      className="w-full bg-bg-surface/50 border border-border/40 rounded-2xl h-14 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all font-bold text-text-primary placeholder:text-text-secondary/30"
+                    />
+                  </div>
+                  {errors.name && <p className="text-[10px] font-black text-danger uppercase tracking-tight ml-1">{errors.name.message}</p>}
+                </motion.div>
+
+                {/* Email Field */}
+                <motion.div variants={itemVariants} className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-text-secondary ml-1">Work Email</label>
+                  <div className="relative group">
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-secondary group-focus-within:text-primary transition-colors" />
+                    <input
+                      {...register('email')}
+                      type="email"
+                      placeholder="name@email.com"
+                      className="w-full bg-bg-surface/50 border border-border/40 rounded-2xl h-14 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all font-bold text-text-primary placeholder:text-text-secondary/30"
+                    />
+                  </div>
+                  {errors.email && <p className="text-[10px] font-black text-danger uppercase tracking-tight ml-1">{errors.email.message}</p>}
+                </motion.div>
+
+                {/* Phone Field */}
+                <motion.div variants={itemVariants} className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-text-secondary ml-1">Phone Number</label>
+                  <div className="relative group">
+                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-secondary group-focus-within:text-primary transition-colors" />
+                    <input
+                      {...register('phone')}
+                      type="tel"
+                      placeholder="01XXXXXXXXX"
+                      className="w-full bg-bg-surface/50 border border-border/40 rounded-2xl h-14 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all font-bold text-text-primary placeholder:text-text-secondary/30"
+                    />
+                  </div>
+                  {errors.phone && <p className="text-[10px] font-black text-danger uppercase tracking-tight ml-1">{errors.phone.message}</p>}
+                </motion.div>
+
+                {/* Education Field */}
+                <motion.div variants={itemVariants} className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-text-secondary ml-1">Highest Education</label>
+                  <div className="relative group">
+                    <BookOpen className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-secondary group-focus-within:text-primary transition-colors" />
+                    <input
+                      {...register('education')}
+                      type="text"
+                      placeholder="e.g., BSc in CSE"
+                      className="w-full bg-bg-surface/50 border border-border/40 rounded-2xl h-14 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all font-bold text-text-primary placeholder:text-text-secondary/30"
+                    />
+                  </div>
+                  {errors.education && <p className="text-[10px] font-black text-danger uppercase tracking-tight ml-1">{errors.education.message}</p>}
+                </motion.div>
+
+                {/* Platform Name Field */}
+                <motion.div variants={itemVariants} className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-text-secondary ml-1">Brand/Academy Name</label>
+                  <div className="relative group">
+                    <Monitor className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-secondary group-focus-within:text-primary transition-colors" />
+                    <input
+                      {...register('platformName')}
+                      type="text"
+                      placeholder="Your Academy"
+                      className="w-full bg-bg-surface/50 border border-border/40 rounded-2xl h-14 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all font-bold text-text-primary placeholder:text-text-secondary/30"
+                    />
+                  </div>
+                  {errors.platformName && <p className="text-[10px] font-black text-danger uppercase tracking-tight ml-1">{errors.platformName.message}</p>}
+                </motion.div>
+
+                {/* Location Field */}
+                <motion.div variants={itemVariants} className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-text-secondary ml-1">Current Location</label>
+                  <div className="relative group">
+                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-secondary group-focus-within:text-primary transition-colors" />
+                    <input
+                      {...register('location')}
+                      type="text"
+                      placeholder="Dhaka, Bangladesh"
+                      className="w-full bg-bg-surface/50 border border-border/40 rounded-2xl h-14 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all font-bold text-text-primary placeholder:text-text-secondary/30"
+                    />
+                  </div>
+                  {errors.location && <p className="text-[10px] font-black text-danger uppercase tracking-tight ml-1">{errors.location.message}</p>}
+                </motion.div>
+
+                {/* Password Field */}
+                <motion.div variants={itemVariants} className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-text-secondary ml-1">Security Password</label>
+                  <div className="relative group">
+                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-secondary group-focus-within:text-primary transition-colors" />
+                    <input
+                      {...register('password')}
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="••••••••"
+                      className="w-full bg-bg-surface/50 border border-border/40 rounded-2xl h-14 pl-12 pr-12 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all font-bold text-text-primary placeholder:text-text-secondary/30"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                  {/* Strength Indicator */}
+                  <div className="h-1.5 w-full bg-bg-surface/50 rounded-full mt-2 overflow-hidden border border-border/20">
+                    <div 
+                      className={cn(
+                        "h-full transition-all duration-700",
+                        strength <= 25 ? "bg-danger" : strength <= 50 ? "bg-warning" : strength <= 75 ? "bg-accent" : "bg-success"
+                      )}
+                      style={{ width: `${strength}%` }}
+                    />
+                  </div>
+                  {errors.password && <p className="text-[10px] font-black text-danger uppercase tracking-tight ml-1">{errors.password.message}</p>}
+                </motion.div>
+
+                {/* Confirm Password */}
+                <motion.div variants={itemVariants} className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-text-secondary ml-1">Confirm Security</label>
+                  <div className="relative group">
+                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-secondary group-focus-within:text-primary transition-colors" />
+                    <input
+                      {...register('confirmPassword')}
+                      type="password"
+                      placeholder="••••••••"
+                      className="w-full bg-bg-surface/50 border border-border/40 rounded-2xl h-14 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all font-bold text-text-primary placeholder:text-text-secondary/30"
+                    />
+                  </div>
+                  {errors.confirmPassword && <p className="text-[10px] font-black text-danger uppercase tracking-tight ml-1">{errors.confirmPassword.message}</p>}
+                </motion.div>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 }}
+                className="pt-4"
+              >
+                <Button 
+                  type="submit" 
+                  className="w-full bg-gradient-to-r from-primary to-primary-light hover:to-accent text-white font-black h-16 rounded-[24px] text-lg shadow-2xl shadow-primary/20 transition-all hover:-translate-y-1 active:scale-[0.98] group relative overflow-hidden border-0"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <Loader2 className="w-6 h-6 animate-spin" />
+                  ) : (
+                    <span className="flex items-center justify-center gap-2">
+                      Start Your Journey <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                    </span>
+                  )}
+                </Button>
+              </motion.div>
+
+              <motion.p 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.7 }}
+                className="text-center text-text-secondary font-medium"
+              >
+                Already part of the community? {' '}
+                <Link href="/login" className="text-primary hover:text-accent font-black transition-colors underline decoration-primary/30 underline-offset-4">Sign In here</Link>
+              </motion.p>
+            </form>
+          </motion.div>
+        </div>
+      </main>
+
+      <Footer />
     </div>
   );
 }
+

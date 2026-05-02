@@ -11,13 +11,50 @@ import {
   Clock, 
   Database,
   Rocket,
-  Loader2
+  Loader2,
+  Sparkles,
+  Zap,
+  Target,
+  FileText,
+  BadgeCent,
+  Layers,
+  BookOpen,
+  Info,
+  Trophy,
+  Activity,
+  ChevronDown
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
 import axiosInstance from '@/lib/axios';
 import { useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: "spring",
+      stiffness: 100,
+      damping: 15
+    }
+  }
+};
 
 export default function CreateExamPage() {
   const router = useRouter();
@@ -26,7 +63,6 @@ export default function CreateExamPage() {
   const [useSubject, setUseSubject] = useState(false);
   const [useModelTest, setUseModelTest] = useState(false);
   
-  // Form State
   const [examData, setExamData] = useState({
     title: '',
     description: '',
@@ -66,36 +102,14 @@ export default function CreateExamPage() {
     return [];
   }, [banks, useSubject, useModelTest, examData.subjectId, examData.modelTestId]);
 
-  const selectedBankDetails = useMemo(
-    () => banks.find((b: any) => String(b.id) === String(examData.bankId)),
-    [banks, examData.bankId],
-  );
-
   const handleCreate = async () => {
-    if (!examData.title) {
-      toast.error('Exam Title দিন');
-      return;
-    }
-    if (!useSubject && !useModelTest) {
-      toast.error('Subject অথবা Model Test source select করুন');
-      return;
-    }
-    if (useSubject && !examData.subjectId) {
-      toast.error('Subject select করুন');
-      return;
-    }
-    if (useModelTest && !examData.modelTestId) {
-      toast.error('Model Test select করুন');
-      return;
-    }
-    if (!examData.bankId) {
-      toast.error('Question Bank select করুন');
-      return;
-    }
-    if (!examData.isFree && Number(examData.priceTaka || 0) <= 0) {
-      toast.error('Paid exam এর জন্য price দিন');
-      return;
-    }
+    if (!examData.title) return toast.error('Exam Title is required');
+    if (!useSubject && !useModelTest) return toast.error('Select a Subject or Model Test source');
+    if (useSubject && !examData.subjectId) return toast.error('Select a Subject');
+    if (useModelTest && !examData.modelTestId) return toast.error('Select a Model Test');
+    if (!examData.bankId) return toast.error('Select a Question Bank');
+    if (!examData.isFree && Number(examData.priceTaka || 0) <= 0) return toast.error('Enter a valid price');
+
     setIsLoading(true);
     try {
       await axiosInstance.post('/exams', {
@@ -109,10 +123,10 @@ export default function CreateExamPage() {
         subjectId: useSubject ? examData.subjectId : undefined,
         modelTestId: useModelTest ? examData.modelTestId : undefined,
       });
-      toast.success('Exam তৈরি হয়েছে');
+      toast.success('Exam created successfully');
       router.push('/teacher/exams');
     } catch (error) {
-      toast.error('Exam create করতে সমস্যা হয়েছে');
+      toast.error('Failed to create exam');
     } finally {
       setIsLoading(false);
     }
@@ -120,281 +134,275 @@ export default function CreateExamPage() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-4xl mx-auto space-y-8 pb-20">
-        <div className="flex flex-col items-center text-center space-y-4">
-          <h1 className="text-4xl font-display font-bold tracking-tight text-text-primary">নতুন Exam তৈরি করুন 🚀</h1>
-          
-          {/* Progress Indicator */}
-          <div className="flex items-center gap-4 py-8">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="flex items-center">
+      <motion.div 
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="max-w-full mx-auto space-y-8 relative px-4 pb-20"
+      >
+        {/* Background Decorative Glow */}
+        <div className="absolute -top-24 -right-24 w-96 h-96 bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute top-1/2 -left-24 w-72 h-72 bg-accent/5 rounded-full blur-[100px] pointer-events-none" />
+
+        {/* Header */}
+        <motion.div variants={itemVariants} className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 mb-1">
+              <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 font-black px-3 py-1 rounded-lg uppercase tracking-widest text-[9px]">
+                Orchestration Suite
+              </Badge>
+            </div>
+            <h1 className="text-3xl md:text-5xl font-display font-black tracking-tight text-text-primary leading-tight">
+              Create <span className="text-primary">Exam</span> 🚀
+            </h1>
+          </div>
+          <div className="flex bg-bg-card/40 backdrop-blur-xl border border-border/50 p-1.5 rounded-[18px] shadow-inner w-fit">
+            {[1, 2, 3].map((s) => (
+              <div key={s} className="flex items-center">
                 <div className={cn(
-                  "w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all",
-                  step >= i ? "bg-primary text-white" : "bg-bg-surface border border-border text-text-secondary"
+                  "w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black transition-all duration-500",
+                  step === s ? "bg-primary text-white shadow-lg shadow-primary/20 scale-110" : step > s ? "bg-success/20 text-success" : "bg-bg-surface text-text-secondary"
                 )}>
-                  {step > i ? <CheckCircle2 className="w-6 h-6" /> : i}
+                  {step > s ? <CheckCircle2 className="w-4 h-4" /> : s}
                 </div>
-                {i < 3 && <div className={cn("w-12 h-1 mx-2 rounded-full", step > i ? "bg-primary" : "bg-border")} />}
+                {s < 3 && <div className="w-8 h-0.5 bg-border/30 mx-1" />}
               </div>
             ))}
           </div>
-        </div>
+        </motion.div>
 
-        {/* STEP 1: Basic Info */}
-        {step === 1 && (
-          <Card className="border-border bg-bg-card/50">
-            <CardHeader><CardTitle>Basic Information</CardTitle></CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-text-secondary">Exam Title</label>
-                <input 
-                  type="text" 
-                  placeholder="যেমন: BCS Model Test 01" 
-                  className="w-full bg-bg-surface border border-border rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-primary/50"
-                  value={examData.title}
-                  onChange={(e) => setExamData({...examData, title: e.target.value})}
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-text-secondary">Description</label>
-                <textarea 
-                  placeholder="পরীক্ষা সম্পর্কে বিস্তারিত..." 
-                  className="w-full bg-bg-surface border border-border rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-primary/50 min-h-[100px]"
-                  value={examData.description}
-                  onChange={(e) => setExamData({...examData, description: e.target.value})}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-text-secondary">Duration (minutes)</label>
-                  <div className="flex items-center gap-4">
-                    <Button variant="outline" size="icon" onClick={() => setExamData({...examData, duration: Math.max(1, examData.duration - 5)})}>
-                      -
-                    </Button>
-                    <span className="text-2xl font-bold w-12 text-center">{examData.duration}</span>
-                    <Button variant="outline" size="icon" onClick={() => setExamData({...examData, duration: examData.duration + 5})}>
-                      +
-                    </Button>
+        <AnimatePresence mode="wait">
+          {step === 1 && (
+            <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6 relative z-10">
+              <Card className="border-border/50 bg-bg-card/40 backdrop-blur-xl rounded-[28px] overflow-hidden border-2 shadow-2xl">
+                <CardHeader className="p-6 pb-2 border-b border-border/20">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
+                      <Sparkles className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-xl font-display font-black text-text-primary">Identity & Branding</CardTitle>
+                      <p className="text-[9px] font-black uppercase tracking-widest text-text-secondary opacity-60">Define your assessment metadata</p>
+                    </div>
                   </div>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-text-secondary">Pass Mark (%)</label>
-                  <input 
-                    type="number" 
-                    placeholder="40" 
-                    className="w-full bg-bg-surface border border-border rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-primary/50"
-                    value={examData.passMark}
-                    onChange={(e) => setExamData({...examData, passMark: parseInt(e.target.value)})}
-                  />
-                </div>
-              </div>
-              <div className="space-y-3">
-                <label className="text-sm font-medium text-text-secondary">Exam Pricing</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setExamData((prev) => ({ ...prev, isFree: true, priceTaka: 0 }))}
-                    className={cn(
-                      'rounded-xl border px-4 py-2 text-sm font-bold',
-                      examData.isFree ? 'border-success bg-success/10 text-success' : 'border-border',
-                    )}
-                  >
-                    Free Exam
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setExamData((prev) => ({ ...prev, isFree: false }))}
-                    className={cn(
-                      'rounded-xl border px-4 py-2 text-sm font-bold',
-                      !examData.isFree ? 'border-accent bg-accent/10 text-accent' : 'border-border',
-                    )}
-                  >
-                    Paid Exam
-                  </button>
-                </div>
-                {!examData.isFree && (
-                  <div className="space-y-2">
-                    <label className="text-xs text-text-secondary">Exam Price (Taka)</label>
-                    <input
-                      type="number"
-                      min={0}
-                      className="w-full bg-bg-surface border border-border rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-primary/50"
-                      value={examData.priceTaka}
-                      onChange={(e) => setExamData((prev) => ({ ...prev, priceTaka: Number(e.target.value || 0) }))}
-                    />
-                  </div>
-                )}
-              </div>
-            </CardContent>
-            <CardFooter><Button className="w-full h-12 rounded-xl bg-primary" onClick={() => setStep(2)}>Next Step <ChevronRight className="ml-2 w-4 h-4" /></Button></CardFooter>
-          </Card>
-        )}
-
-        {/* STEP 2: Subject / ModelTest Link */}
-        {step === 2 && (
-          <Card className="border-border bg-bg-card/50">
-            <CardHeader><CardTitle>Subject / Model Test Setup</CardTitle></CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-text-secondary">Select Source</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    onClick={() => {
-                      setUseSubject(true);
-                      setUseModelTest(false);
-                      setExamData((prev) => ({ ...prev, modelTestId: '', bankId: '' }));
-                    }}
-                    className={cn(
-                      "rounded-xl border px-4 py-2 text-sm font-bold",
-                      useSubject ? "border-primary bg-primary/10 text-primary" : "border-border"
-                    )}
-                  >
-                    Subject
-                  </button>
-                  <button
-                    onClick={() => {
-                      setUseModelTest(true);
-                      setUseSubject(false);
-                      setExamData((prev) => ({ ...prev, subjectId: '', bankId: '' }));
-                    }}
-                    className={cn(
-                      "rounded-xl border px-4 py-2 text-sm font-bold",
-                      useModelTest ? "border-primary bg-primary/10 text-primary" : "border-border"
-                    )}
-                  >
-                    Model Test
-                  </button>
-                </div>
-              </div>
-
-              {useSubject && (
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-text-secondary">Attach to Subject</label>
-                <select
-                  className="w-full bg-bg-surface border border-border rounded-xl py-3 px-4 focus:outline-none"
-                  value={examData.subjectId}
-                  onChange={(e) => setExamData({ ...examData, subjectId: e.target.value, bankId: '' })}
-                >
-                  <option value="">Subject সিলেক্ট করুন...</option>
-                  {subjects.map((subject: any) => (
-                    <option key={subject.id} value={subject.id}>{subject.name}</option>
-                  ))}
-                </select>
-              </div>
-              )}
-
-              {useModelTest && (
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-text-secondary">Attach to Model Test</label>
-                <select
-                  className="w-full bg-bg-surface border border-border rounded-xl py-3 px-4 focus:outline-none"
-                  value={examData.modelTestId}
-                  onChange={(e) => setExamData({ ...examData, modelTestId: e.target.value, bankId: '' })}
-                >
-                  <option value="">Model Test সিলেক্ট করুন...</option>
-                  {modelTests.map((mt: any) => (
-                    <option key={mt.id} value={mt.id}>{mt.name}</option>
-                  ))}
-                </select>
-              </div>
-              )}
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-text-secondary">Question Bank (selected scope under)</label>
-                <select
-                  className="w-full bg-bg-surface border border-border rounded-xl py-3 px-4 focus:outline-none"
-                  value={examData.bankId}
-                  onChange={(e) => setExamData({ ...examData, bankId: e.target.value })}
-                  disabled={scopedBanks.length === 0}
-                >
-                  <option value="">
-                    {scopedBanks.length === 0 ? 'আগে Subject/Model Test select করুন' : 'Question Bank সিলেক্ট করুন'}
-                  </option>
-                  {scopedBanks.map((bank: any) => (
-                    <option key={bank.id} value={bank.id}>
-                      {bank.name} ({bank.questionCount || 0} Qs)
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <p className="text-xs text-text-secondary">
-                Selected Subject/Model Test under question bank দিয়েই exam create payload যাবে।
-              </p>
-            </CardContent>
-            <CardFooter className="flex gap-4">
-              <Button variant="ghost" className="flex-1 h-12 rounded-xl" onClick={() => setStep(1)}><ChevronLeft className="mr-2 w-4 h-4" /> Back</Button>
-              <Button className="flex-1 h-12 rounded-xl bg-primary" onClick={() => setStep(3)}>Review <ChevronRight className="ml-2 w-4 h-4" /></Button>
-            </CardFooter>
-          </Card>
-        )}
-
-        {/* STEP 3: Review */}
-        {step === 3 && (
-          <Card className="border-border bg-bg-card/50">
-            <CardHeader><CardTitle>Review</CardTitle></CardHeader>
-            <CardContent className="space-y-6">
-              {examData.bankId && (
-                <div className="p-6 rounded-2xl bg-bg-surface border border-border border-dashed space-y-4">
-                   <h5 className="font-bold flex items-center gap-2"><Database className="w-4 h-4 text-primary" /> Bank Preview</h5>
+                </CardHeader>
+                <CardContent className="p-6 space-y-5">
                    <div className="space-y-2">
-                      <div className="flex justify-between items-center p-3 rounded-lg bg-bg-card text-xs">
-                        <span>Total Questions to include:</span>
-                        <span className="font-bold text-primary">{selectedBankDetails?.questionCount || 0} Questions</span>
-                      </div>
-                      <p className="text-[10px] text-text-secondary">ব্যাবহারকারীরা এই ব্যাংকের সব প্রশ্ন আপনার সেট করা অর্ডারে বা র‍্যান্ডমলি দেখতে পাবে।</p>
+                     <Label className="text-[10px] font-black uppercase tracking-widest text-text-secondary ml-1">Exam Title</Label>
+                     <div className="relative group">
+                       <FileText className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary group-focus-within:text-primary transition-colors" />
+                       <input
+                        className="w-full bg-bg-surface/50 border border-border/40 rounded-[14px] h-12 pl-12 pr-6 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all text-text-primary"
+                        placeholder="e.g. BCS Preliminary Master Class"
+                        value={examData.title}
+                        onChange={(e) => setExamData({ ...examData, title: e.target.value })}
+                      />
+                     </div>
                    </div>
-                </div>
-              )}
-               <div className="grid gap-4 md:grid-cols-2">
-                  <div className="p-4 rounded-xl bg-bg-surface border border-border space-y-1">
-                    <p className="text-xs text-text-secondary uppercase font-bold tracking-widest">Exam Title</p>
-                    <p className="font-bold">{examData.title}</p>
+                   <div className="space-y-2">
+                     <Label className="text-[10px] font-black uppercase tracking-widest text-text-secondary ml-1">Brief Description</Label>
+                     <textarea
+                      className="w-full bg-bg-surface/50 border border-border/40 rounded-[20px] p-5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all text-text-primary min-h-[100px] resize-none"
+                      placeholder="Highlight key learning outcomes or instructions..."
+                      value={examData.description}
+                      onChange={(e) => setExamData({ ...examData, description: e.target.value })}
+                    />
+                   </div>
+                </CardContent>
+                <CardFooter className="p-6 bg-bg-surface/30 flex justify-end border-t border-border/10">
+                   <Button onClick={() => setStep(2)} className="rounded-xl h-11 px-8 bg-primary text-white font-black uppercase tracking-widest text-[10px] shadow-lg shadow-primary/20 transition-all hover:-translate-y-1">
+                     Continue Config <ChevronRight className="w-4 h-4 ml-2" />
+                   </Button>
+                </CardFooter>
+              </Card>
+            </motion.div>
+          )}
+
+          {step === 2 && (
+            <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6 relative z-10">
+              <Card className="border-border/50 bg-bg-card/40 backdrop-blur-xl rounded-[28px] overflow-hidden border-2 shadow-2xl">
+                <CardHeader className="p-6 pb-2 border-b border-border/20">
+                   <div className="flex items-center gap-3">
+                    <div className="p-2.5 rounded-xl bg-accent/10 text-accent">
+                      <Target className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-xl font-display font-black text-text-primary">Source Architecture</CardTitle>
+                      <p className="text-[9px] font-black uppercase tracking-widest text-text-secondary opacity-60">Map your question repositories</p>
+                    </div>
                   </div>
-                  <div className="p-4 rounded-xl bg-bg-surface border border-border space-y-1">
-                    <p className="text-xs text-text-secondary uppercase font-bold tracking-widest">Duration</p>
-                    <p className="font-bold flex items-center gap-2"><Clock className="w-4 h-4" /> {examData.duration} Minutes</p>
+                </CardHeader>
+                <CardContent className="p-6 space-y-6">
+                   <div className="grid grid-cols-2 gap-4">
+                      <button 
+                        onClick={() => { setUseSubject(true); setUseModelTest(false); }}
+                        className={cn(
+                          "p-4 rounded-[20px] border-2 flex flex-col items-center gap-2 transition-all duration-300",
+                          useSubject ? "bg-primary/5 border-primary shadow-lg shadow-primary/5" : "bg-bg-surface/50 border-border/40 grayscale opacity-40 hover:grayscale-0 hover:opacity-100"
+                        )}
+                      >
+                         <div className={cn("p-2 rounded-xl", useSubject ? "bg-primary text-white" : "bg-border/20 text-text-secondary")}>
+                            <BookOpen className="w-4 h-4" />
+                         </div>
+                         <span className="text-[10px] font-black uppercase tracking-widest">Academic Subject</span>
+                      </button>
+                      <button 
+                        onClick={() => { setUseSubject(false); setUseModelTest(true); }}
+                        className={cn(
+                          "p-4 rounded-[20px] border-2 flex flex-col items-center gap-2 transition-all duration-300",
+                          useModelTest ? "bg-accent/5 border-accent shadow-lg shadow-accent/5" : "bg-bg-surface/50 border-border/40 grayscale opacity-40 hover:grayscale-0 hover:opacity-100"
+                        )}
+                      >
+                         <div className={cn("p-2 rounded-xl", useModelTest ? "bg-accent text-white" : "bg-border/20 text-text-secondary")}>
+                            <Layers className="w-4 h-4" />
+                         </div>
+                         <span className="text-[10px] font-black uppercase tracking-widest">Model Test</span>
+                      </button>
+                   </div>
+
+                   <AnimatePresence mode="wait">
+                      {(useSubject || useModelTest) && (
+                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+                           <div className="space-y-2">
+                             <Label className="text-[10px] font-black uppercase tracking-widest text-text-secondary">Select {useSubject ? 'Subject' : 'Model Test'}</Label>
+                             <select
+                              className="w-full bg-bg-surface/50 border border-border/40 rounded-[14px] h-11 px-4 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary/40 appearance-none"
+                              value={useSubject ? examData.subjectId : examData.modelTestId}
+                              onChange={(e) => setExamData({ ...examData, subjectId: useSubject ? e.target.value : '', modelTestId: useModelTest ? e.target.value : '', bankId: '' })}
+                            >
+                              <option value="">Choose {useSubject ? 'Subject' : 'Model Test'}...</option>
+                              {(useSubject ? subjects : modelTests).map((item: any) => (
+                                <option key={item.id} value={item.id}>{item.name}</option>
+                              ))}
+                            </select>
+                           </div>
+
+                           <div className="space-y-2">
+                             <Label className="text-[10px] font-black uppercase tracking-widest text-text-secondary">Target Question Bank</Label>
+                             <select
+                              className="w-full bg-bg-surface/50 border border-border/40 rounded-[14px] h-11 px-4 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary/40 appearance-none"
+                              value={examData.bankId}
+                              onChange={(e) => setExamData({ ...examData, bankId: e.target.value })}
+                              disabled={scopedBanks.length === 0}
+                            >
+                              <option value="">{scopedBanks.length === 0 ? 'No banks found' : 'Choose Repository...'}</option>
+                              {scopedBanks.map((bank: any) => (
+                                <option key={bank.id} value={bank.id}>{bank.name}</option>
+                              ))}
+                            </select>
+                           </div>
+                        </motion.div>
+                      )}
+                   </AnimatePresence>
+                </CardContent>
+                <CardFooter className="p-6 bg-bg-surface/30 flex justify-between border-t border-border/10">
+                   <Button onClick={() => setStep(1)} variant="ghost" className="rounded-xl h-11 px-6 font-black uppercase tracking-widest text-[9px] hover:bg-white">
+                     <ChevronLeft className="w-4 h-4 mr-2" /> Identity
+                   </Button>
+                   <Button onClick={() => setStep(3)} className="rounded-xl h-11 px-8 bg-primary text-white font-black uppercase tracking-widest text-[10px] shadow-lg shadow-primary/20 transition-all hover:-translate-y-1">
+                     Parameters <ChevronRight className="w-4 h-4 ml-2" />
+                   </Button>
+                </CardFooter>
+              </Card>
+            </motion.div>
+          )}
+
+          {step === 3 && (
+            <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6 relative z-10">
+              <Card className="border-border/50 bg-bg-card/40 backdrop-blur-xl rounded-[28px] overflow-hidden border-2 shadow-2xl">
+                <CardHeader className="p-6 pb-2 border-b border-border/20">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2.5 rounded-xl bg-success/10 text-success">
+                      <Activity className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-xl font-display font-black text-text-primary">Rule Configuration</CardTitle>
+                      <p className="text-[9px] font-black uppercase tracking-widest text-text-secondary opacity-60">Set pass marks & access tiers</p>
+                    </div>
                   </div>
-                  <div className="p-4 rounded-xl bg-bg-surface border border-border space-y-1">
-                    <p className="text-xs text-text-secondary uppercase font-bold tracking-widest">Source</p>
-                    <p className="font-bold">{useSubject ? 'Subject' : useModelTest ? 'Model Test' : 'Not selected'}</p>
-                  </div>
-                  <div className="p-4 rounded-xl bg-bg-surface border border-border space-y-1">
-                    <p className="text-xs text-text-secondary uppercase font-bold tracking-widest">Question Bank</p>
-                    <p className="font-bold">{selectedBankDetails?.name || 'Not selected'}</p>
-                  </div>
-                  <div className="p-4 rounded-xl bg-bg-surface border border-border space-y-1">
-                    <p className="text-xs text-text-secondary uppercase font-bold tracking-widest">
-                      {useSubject ? 'Attached Subject' : useModelTest ? 'Attached Model Test' : 'Attached Source'}
-                    </p>
-                    <p className="font-bold">
-                      {useSubject
-                        ? (subjects.find((s: any) => s.id === examData.subjectId)?.name || 'None')
-                        : useModelTest
-                          ? (modelTests.find((m: any) => m.id === examData.modelTestId)?.name || 'None')
-                          : 'None'}
-                    </p>
-                  </div>
-                  <div className="p-4 rounded-xl bg-bg-surface border border-border space-y-1">
-                    <p className="text-xs text-text-secondary uppercase font-bold tracking-widest">Exam Price</p>
-                    <p className="font-bold">{examData.isFree ? 'Free' : `৳${Number(examData.priceTaka || 0)}`}</p>
-                  </div>
-               </div>
-            </CardContent>
-            <CardFooter className="flex gap-4">
-              <Button variant="ghost" className="flex-1 h-12 rounded-xl" onClick={() => setStep(2)}><ChevronLeft className="mr-2 w-4 h-4" /> Back</Button>
-              <Button 
-                onClick={handleCreate}
-                disabled={isLoading}
-                className="flex-1 h-12 rounded-xl bg-success hover:bg-success-dark text-white font-bold shadow-xl"
-              >
-                {isLoading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Rocket className="w-5 h-5 mr-2" />}
-                Exam তৈরি করো
-              </Button>
-            </CardFooter>
-          </Card>
-        )}
-      </div>
+                </CardHeader>
+                <CardContent className="p-6 space-y-6">
+                   <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-text-secondary ml-1">Time (Mins)</Label>
+                        <div className="relative group">
+                          <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary group-focus-within:text-primary transition-colors" />
+                          <input
+                            type="number"
+                            className="w-full bg-bg-surface/50 border border-border/40 rounded-[14px] h-11 pl-11 pr-4 text-xs font-bold"
+                            value={examData.duration}
+                            onChange={(e) => setExamData({ ...examData, duration: Number(e.target.value) })}
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-text-secondary ml-1">Pass Mark (%)</Label>
+                        <div className="relative group">
+                          <Trophy className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary group-focus-within:text-primary transition-colors" />
+                          <input
+                            type="number"
+                            className="w-full bg-bg-surface/50 border border-border/40 rounded-[14px] h-11 pl-11 pr-4 text-xs font-bold"
+                            value={examData.passMark}
+                            onChange={(e) => setExamData({ ...examData, passMark: Number(e.target.value) })}
+                          />
+                        </div>
+                      </div>
+                   </div>
+
+                   <div className="p-5 rounded-[22px] border border-border/40 bg-white/40 space-y-5">
+                      <div className="flex items-center justify-between">
+                         <div className="flex items-center gap-3">
+                            <div className={cn("p-2 rounded-xl transition-all", examData.isFree ? "bg-success/10 text-success" : "bg-accent/10 text-accent")}>
+                               {examData.isFree ? <CheckCircle2 className="w-4 h-4" /> : <BadgeCent className="w-4 h-4" />}
+                            </div>
+                            <div>
+                               <p className="text-[10px] font-black uppercase tracking-widest text-text-primary">Access Control</p>
+                               <p className="text-[9px] font-medium text-text-secondary">{examData.isFree ? 'Public free access enabled' : 'Monetization active'}</p>
+                            </div>
+                         </div>
+                         <div className="flex bg-bg-surface p-1 rounded-xl border border-border/40">
+                            <button onClick={() => setExamData({ ...examData, isFree: true })} className={cn("px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all", examData.isFree ? "bg-success text-white shadow-md" : "text-text-secondary")}>Free</button>
+                            <button onClick={() => setExamData({ ...examData, isFree: false })} className={cn("px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all", !examData.isFree ? "bg-accent text-white shadow-md" : "text-text-secondary")}>Paid</button>
+                         </div>
+                      </div>
+
+                      <AnimatePresence>
+                         {!examData.isFree && (
+                           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="space-y-2 pt-2 border-t border-border/10">
+                              <Label className="text-[10px] font-black uppercase tracking-widest text-text-secondary">Price Listing (৳)</Label>
+                              <div className="relative group">
+                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xs font-black text-accent group-focus-within:text-accent">৳</span>
+                                <input
+                                  type="number"
+                                  className="w-full bg-bg-surface border-2 border-accent/20 rounded-[14px] h-11 pl-10 pr-4 text-sm font-black text-accent focus:ring-4 focus:ring-accent/10"
+                                  placeholder="0.00"
+                                  value={examData.priceTaka}
+                                  onChange={(e) => setExamData({ ...examData, priceTaka: Number(e.target.value) })}
+                                />
+                              </div>
+                           </motion.div>
+                         )}
+                      </AnimatePresence>
+                   </div>
+                </CardContent>
+                <CardFooter className="p-6 bg-bg-surface/30 flex justify-between border-t border-border/10">
+                   <Button onClick={() => setStep(2)} variant="ghost" className="rounded-xl h-11 px-6 font-black uppercase tracking-widest text-[9px] hover:bg-white">
+                     <ChevronLeft className="w-4 h-4 mr-2" /> Architecture
+                   </Button>
+                   <Button 
+                    onClick={handleCreate} 
+                    disabled={isLoading}
+                    className="rounded-xl h-11 px-10 bg-success text-white font-black uppercase tracking-widest text-[10px] shadow-lg shadow-success/20 transition-all hover:-translate-y-1"
+                   >
+                     {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Rocket className="w-4 h-4 mr-2" />}
+                     Launch Assessment
+                   </Button>
+                </CardFooter>
+              </Card>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
     </DashboardLayout>
   );
 }

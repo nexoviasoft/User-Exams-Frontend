@@ -1,5 +1,5 @@
 'use client';
-
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useAppDispatch } from '@/store/hooks';
 import { logout } from '@/store/slices/authSlice';
@@ -10,8 +10,13 @@ import { useRouter } from 'next/navigation';
 
 export const Navbar = ({ onMenuClick }: { onMenuClick?: () => void }) => {
   const { user } = useAuth();
+  const [mounted, setMounted] = useState(false);
   const dispatch = useAppDispatch();
   const router = useRouter();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleLogout = () => {
     dispatch(logout());
@@ -59,8 +64,8 @@ export const Navbar = ({ onMenuClick }: { onMenuClick?: () => void }) => {
         
         <div className="flex items-center gap-3">
           <div className="text-right hidden sm:block">
-            <p className="text-sm font-medium text-text-primary">{user?.name || 'Guest User'}</p>
-            <p className="text-xs text-text-secondary capitalize">{user?.role || 'Guest'}</p>
+            <p className="text-sm font-medium text-text-primary">{mounted ? (user?.name || 'Guest User') : ''}</p>
+            <p className="text-xs text-text-secondary capitalize">{mounted ? (user?.role || 'Guest') : ''}</p>
           </div>
           <div className="w-10 h-10 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-primary">
             <User className="w-6 h-6" />

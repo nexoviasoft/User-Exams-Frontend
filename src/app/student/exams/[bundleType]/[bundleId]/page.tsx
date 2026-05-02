@@ -19,7 +19,31 @@ import {
 import { cn } from '@/lib/utils';
 import axiosInstance from '@/lib/axios';
 import { toast } from 'sonner';
-import { ArrowLeft, BookOpen, Loader2, Smartphone, Trophy } from 'lucide-react';
+import { ArrowLeft, BookOpen, Loader2, Smartphone, Trophy, User as UserIcon, Calendar, CheckCircle2, Lock, Info } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: "spring",
+      stiffness: 100,
+      damping: 15
+    }
+  }
+};
 
 type PaymentInstruction = {
   number: string;
@@ -207,145 +231,232 @@ export default function BundleExamListPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 max-w-6xl mx-auto">
-        <Button variant="outline" className="rounded-xl" onClick={() => router.push('/student/exams')}>
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Exam Types
-        </Button>
+      <motion.div 
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="space-y-10 max-w-7xl mx-auto relative px-4"
+      >
+        {/* Background Decorative Glow */}
+        <div className="absolute -top-24 -right-24 w-96 h-96 bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute top-1/2 -left-24 w-72 h-72 bg-accent/5 rounded-full blur-[100px] pointer-events-none" />
 
-        <Card className="border-border bg-bg-card/60">
-          <CardHeader>
-            <div className="flex items-center justify-between gap-2 flex-wrap">
-              <CardTitle className="text-2xl font-display">{bundle.name}</CardTitle>
-              <Badge className={cn(bundle.isFree ? 'bg-success/10 text-success border-success/20' : 'bg-accent/10 text-accent border-accent/20')}>
-                {bundle.isFree ? 'FREE' : `৳${Math.floor(bundle.price / 100)}`}
-              </Badge>
-            </div>
-            <p className="text-sm text-text-secondary">
-              By {bundle.teacher?.user?.name || 'Teacher'} • {bundle.examType?.name || '-'} • {bundle.exams?.length || 0} Exams
-            </p>
-            {!bundle.isFree && (
-              <div>
-                {hasBundleAccess ? (
-                  <Badge className="bg-success/10 text-success border-success/20">Purchased (All Exams Unlocked)</Badge>
-                ) : (
-                  <Badge className="bg-warning/10 text-warning border-warning/20">Not Purchased</Badge>
+        {/* Back Button & Header */}
+        <div className="flex flex-col gap-6 relative z-10">
+          <motion.div variants={itemVariants}>
+            <Button 
+              variant="ghost" 
+              className="rounded-xl hover:bg-bg-card/60 group w-fit -ml-2" 
+              onClick={() => router.push('/student/exams')}
+            >
+              <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
+              সব Exams-এ ফিরে যান
+            </Button>
+          </motion.div>
+
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <motion.div variants={itemVariants} className="space-y-3">
+              <div className="flex items-center gap-3">
+                <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 font-black px-3 py-1 rounded-lg">
+                  {isSubject ? 'SUBJECT BUNDLE' : 'MODEL TEST BUNDLE'}
+                </Badge>
+                {bundle.isFree && (
+                  <Badge className="bg-success/10 text-success border-success/20 font-black px-3 py-1 rounded-lg">
+                    FREE ACCESS
+                  </Badge>
                 )}
               </div>
-            )}
-          </CardHeader>
-        </Card>
+              <h1 className="text-3xl md:text-5xl font-display font-black tracking-tight text-text-primary leading-tight">
+                {bundle.name}
+              </h1>
+              <div className="flex flex-wrap items-center gap-4 text-text-secondary">
+                <div className="flex items-center gap-2 font-bold bg-bg-card/40 px-3 py-1.5 rounded-xl border border-border/50">
+                  <UserIcon className="w-4 h-4 text-primary" /> {bundle.teacher?.user?.name || 'Teacher'}
+                </div>
+                <div className="flex items-center gap-2 font-bold bg-bg-card/40 px-3 py-1.5 rounded-xl border border-border/50">
+                   <BookOpen className="w-4 h-4 text-accent" /> {bundle.exams?.length || 0} Exams Available
+                </div>
+              </div>
+            </motion.div>
 
-        {!bundle.isFree && !hasBundleAccess && (
-          <Card className="border-border bg-bg-card/60">
-            <CardHeader>
-              <CardTitle className="text-lg">এই {isSubject ? 'Subject' : 'Model Test'} টি Paid</CardTitle>
-              <p className="text-sm text-text-secondary">
-                সব exam unlock করতে <span className="font-bold text-accent">সব কিনুন</span> চাপুন, অথবা নির্দিষ্ট exam কিনতে ওই exam card থেকে
-                <span className="font-bold"> এইটা কিনুন</span> চাপুন।
-              </p>
-            </CardHeader>
-            <CardContent className="flex flex-wrap items-center gap-3">
-              <Button
-                onClick={() => {
-                  setSelectedExamId(null);
-                  setIsPaymentModalOpen(true);
-                }}
-                className="rounded-xl"
-              >
-                সব কিনুন (৳{Math.floor((bundle.price || 0) / 100)})
-              </Button>
-              <p className="text-xs text-text-secondary">
-                Payment method: bKash / Nagad, তারপর Transaction ID দিয়ে submit করুন।
-              </p>
-            </CardContent>
-          </Card>
-        )}
-
-        <div className="grid gap-4 md:grid-cols-2">
-          {(bundle.exams || []).map((exam) => {
-            const canStart = bundle.isFree || hasBundleAccess || paidExamIds.has(exam.id);
-            const latestResult = latestCompletedResultByExamId.get(exam.id);
-            return (
-              <Card key={exam.id} className="border-border bg-bg-card/40 hover:border-primary/30 transition-all">
-                <CardHeader>
-                  <CardTitle className="text-lg">{exam.title}</CardTitle>
-                </CardHeader>
-                <CardContent className="flex items-center justify-between gap-3 flex-wrap">
-                  <div className="space-y-2">
-                    <div className="text-sm text-text-secondary flex items-center gap-2">
-                      <BookOpen className="w-4 h-4" /> {exam.totalQuestions || 0} Questions
+            {!bundle.isFree && (
+              <motion.div variants={itemVariants}>
+                {hasBundleAccess ? (
+                  <div className="flex items-center gap-3 bg-success/10 border border-success/20 p-4 rounded-[24px]">
+                    <div className="w-12 h-12 rounded-2xl bg-success/20 flex items-center justify-center text-success">
+                      <CheckCircle2 className="w-6 h-6" />
                     </div>
-                    {latestResult ? (
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <Badge
-                          className={cn(
-                            latestResult.percentageScore >= 40
-                              ? 'bg-success/10 text-success border-success/20'
-                              : 'bg-danger/10 text-danger border-danger/20',
-                          )}
-                        >
-                          Your Result: {latestResult.score}/{latestResult.totalQuestions} ({latestResult.percentageScore}%)
-                        </Badge>
-                        <Link href={`/student/result/${latestResult.studentExamId}`}>
-                          <Button variant="outline" size="sm">
-                            Result দেখুন
-                          </Button>
-                        </Link>
-                      </div>
-                    ) : (
-                      <p className="text-xs text-text-secondary">এখনও result নেই</p>
-                    )}
+                    <div>
+                      <div className="text-xs font-black text-success uppercase tracking-widest">Ownership</div>
+                      <div className="text-lg font-black text-text-primary">Purchased & Unlocked</div>
+                    </div>
                   </div>
-                  <Badge className={cn(
-                    exam.isFree ? 'bg-success/10 text-success border-success/20' : 'bg-accent/10 text-accent border-accent/20'
-                  )}>
-                    {exam.isFree ? 'FREE' : `৳${Math.floor(Number(exam.price || 0) / 100)}`}
-                  </Badge>
-                  {canStart ? (
-                    <div className="flex gap-2">
-                      <Button onClick={() => startExamMutation.mutate(exam.id)} disabled={startExamMutation.isPending}>
-                        {startExamMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
-                        Exam দিন
-                      </Button>
-                      <Link href={`/student/leaderboard/${exam.id}`}>
-                        <Button variant="outline">
-                          <Trophy className="w-4 h-4 mr-1" /> Leaderboard
-                        </Button>
-                      </Link>
+                ) : (
+                  <div className="flex flex-col items-end gap-3">
+                    <div className="text-right">
+                      <div className="text-xs font-black text-text-secondary uppercase tracking-widest mb-1">Full Bundle Price</div>
+                      <div className="text-3xl font-display font-black text-primary">৳{Math.floor((bundle.price || 0) / 100)}</div>
                     </div>
-                  ) : (
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          setSelectedExamId(exam.id);
-                          setIsPaymentModalOpen(true);
-                        }}
-                      >
-                        এইটা কিনুন
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          setSelectedExamId(null);
-                          setIsPaymentModalOpen(true);
-                        }}
-                      >
-                        সব কিনুন
-                      </Button>
-                      <Link href={`/student/leaderboard/${exam.id}`}>
-                        <Button variant="outline">
-                          <Trophy className="w-4 h-4 mr-1" /> Leaderboard
-                        </Button>
-                      </Link>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })}
+                    <Button
+                      onClick={() => {
+                        setSelectedExamId(null);
+                        setIsPaymentModalOpen(true);
+                      }}
+                      className="rounded-[20px] h-14 px-8 bg-primary hover:bg-primary-light shadow-xl shadow-primary/20 font-black text-base"
+                    >
+                      পুরো Bundle কিনুন
+                    </Button>
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </div>
         </div>
 
+        {/* Purchase CTA for non-owners */}
+        {!bundle.isFree && !hasBundleAccess && (
+          <motion.div variants={itemVariants}>
+            <div className="p-8 rounded-[32px] bg-gradient-to-r from-bg-card/40 to-bg-card/20 backdrop-blur-xl border-2 border-border/50 relative overflow-hidden group">
+              <div className="absolute -right-12 -bottom-12 w-48 h-48 bg-primary/10 rounded-full blur-[60px] group-hover:bg-primary/20 transition-all" />
+              <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div className="space-y-2">
+                  <h3 className="text-2xl font-display font-black text-text-primary">এই {isSubject ? 'Subject' : 'Model Test'} টি Paid</h3>
+                  <p className="text-text-secondary font-medium max-w-xl">
+                    সবগুলো exam একসাথে পেতে <span className="text-primary font-bold">পুরো Bundle</span> কিনুন, অথবা আপনার প্রয়োজন অনুযায়ী নির্দিষ্ট exam টি আলাদাভাবেও কিনতে পারেন।
+                  </p>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  <div className="text-xs text-text-secondary font-black bg-bg-surface/50 px-4 py-2 rounded-xl border border-border/40">
+                    PAYMENT: bKash / Nagad
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Exams Grid */}
+        <div className="grid gap-6 md:grid-cols-2 relative z-10">
+          <AnimatePresence mode="popLayout">
+            {(bundle.exams || []).map((exam) => {
+              const canStart = bundle.isFree || hasBundleAccess || paidExamIds.has(exam.id);
+              const latestResult = latestCompletedResultByExamId.get(exam.id);
+              return (
+                <motion.div key={exam.id} variants={itemVariants} layout className="h-full">
+                  <Card className="group border-border/50 bg-bg-card/40 backdrop-blur-xl hover:bg-bg-card/60 transition-all duration-300 rounded-[32px] overflow-hidden border-2 hover:border-primary/30 h-full flex flex-col">
+                    <CardHeader className="p-8 pb-4">
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="p-3 rounded-2xl bg-primary/10 text-primary">
+                          <BookOpen className="w-6 h-6" />
+                        </div>
+                        <Badge className={cn(
+                          "font-black px-4 py-1.5 rounded-xl text-[11px]",
+                          exam.isFree ? 'bg-success/10 text-success border-success/20' : 'bg-accent/10 text-accent border-accent/20'
+                        )}>
+                          {exam.isFree ? 'FREE' : `৳${Math.floor(Number(exam.price || 0) / 100)}`}
+                        </Badge>
+                      </div>
+                      <CardTitle className="text-2xl font-display font-black text-text-primary group-hover:text-primary transition-colors mb-2">
+                        {exam.title}
+                      </CardTitle>
+                      <div className="flex items-center gap-3 text-sm font-bold text-text-secondary">
+                        <span>{exam.totalQuestions || 0} Questions</span>
+                        <span className="w-1 h-1 rounded-full bg-border" />
+                        <span>Duration: 20 Mins</span>
+                      </div>
+                    </CardHeader>
+
+                    <CardContent className="px-8 pb-8 flex-1 flex flex-col justify-between gap-8">
+                      {/* Result Section */}
+                      <div className="min-h-[60px]">
+                        {latestResult ? (
+                          <div className="p-4 rounded-2xl bg-bg-surface/50 border border-border/40 space-y-3">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] font-black text-text-secondary uppercase tracking-widest">Latest Score</span>
+                              <span className={cn(
+                                "text-xs font-black px-2 py-0.5 rounded-lg",
+                                latestResult.percentageScore >= 40 ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'
+                              )}>
+                                {latestResult.percentageScore >= 40 ? 'PASSED' : 'FAILED'}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between gap-4">
+                              <div className="text-lg font-black text-text-primary">
+                                {latestResult.score} <span className="text-text-secondary text-sm font-bold">/ {latestResult.totalQuestions}</span>
+                              </div>
+                              <Link href={`/student/result/${latestResult.studentExamId}`}>
+                                <Button variant="outline" size="sm" className="rounded-xl font-bold h-9 bg-bg-card hover:bg-bg-surface transition-all">
+                                  Result দেখুন
+                                </Button>
+                              </Link>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 text-text-secondary/60 text-sm italic py-2">
+                            <Info className="w-4 h-4" /> এখনও exam দেয়া হয়নি
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex flex-wrap gap-3">
+                        {canStart ? (
+                          <>
+                            <Button 
+                              onClick={() => startExamMutation.mutate(exam.id)} 
+                              disabled={startExamMutation.isPending}
+                              className="flex-1 bg-primary hover:bg-primary-light text-white font-black rounded-2xl h-14 shadow-xl shadow-primary/20 text-base"
+                            >
+                              {startExamMutation.isPending ? (
+                                <Loader2 className="w-5 h-5 animate-spin" />
+                              ) : (
+                                "Exam দিন"
+                              )}
+                            </Button>
+                            <Link href={`/student/leaderboard/${exam.id}`}>
+                              <Button variant="outline" className="rounded-2xl h-14 w-14 p-0 border-2 border-border/60 bg-bg-surface/50 hover:border-primary/40 transition-all flex items-center justify-center">
+                                <Trophy className="w-6 h-6 text-accent" />
+                              </Button>
+                            </Link>
+                          </>
+                        ) : (
+                          <>
+                            <Button
+                              onClick={() => {
+                                setSelectedExamId(exam.id);
+                                setIsPaymentModalOpen(true);
+                              }}
+                              className="flex-1 bg-bg-surface hover:bg-bg-card text-text-primary border-2 border-border/60 hover:border-primary/40 font-black rounded-2xl h-14 transition-all"
+                            >
+                              এইটা কিনুন
+                            </Button>
+                            <Button
+                              onClick={() => {
+                                setSelectedExamId(null);
+                                setIsPaymentModalOpen(true);
+                              }}
+                              variant="outline"
+                              className="flex-1 border-2 border-border/60 font-black rounded-2xl h-14 hover:bg-bg-card transition-all"
+                            >
+                              পুরো Bundle কিনুন
+                            </Button>
+                            <Link href={`/student/leaderboard/${exam.id}`}>
+                              <Button variant="outline" className="rounded-2xl h-14 w-14 p-0 border-2 border-border/60 flex items-center justify-center">
+                                <Trophy className="w-6 h-6 text-text-secondary" />
+                              </Button>
+                            </Link>
+                          </>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
+        </div>
+
+        {/* Payment Modal */}
         <Dialog
           open={isPaymentModalOpen && !bundle.isFree && !hasBundleAccess}
           onOpenChange={(open) => {
@@ -355,67 +466,105 @@ export default function BundleExamListPage() {
             }
           }}
         >
-          <DialogContent className="bg-bg-card border-border sm:max-w-[460px]">
-            <DialogHeader>
-              <DialogTitle>Payment করুন</DialogTitle>
-              <DialogDescription>
-                {selectedExamId ? 'Selected exam purchase' : 'Full bundle purchase'} • Amount: ৳{Math.floor(paymentAmountInPaisa / 100)}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-3">
-              <div className="flex gap-3">
-                <Button
-                  type="button"
-                  variant={paymentMethod === 'bkash' ? 'primary' : 'outline'}
-                  onClick={() => setPaymentMethod('bkash')}
-                >
-                  <Smartphone className="w-4 h-4 mr-1" /> bKash
+          <DialogContent className="bg-bg-card/90 backdrop-blur-2xl border-border/50 sm:max-w-[480px] rounded-[32px] overflow-hidden p-0">
+            <div className="relative h-24 bg-gradient-to-r from-primary/20 to-accent/20">
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-lg">
+                  <Smartphone className="w-6 h-6 text-primary" />
+                </div>
+              </div>
+            </div>
+
+            <div className="p-8 space-y-6">
+              <div className="text-center space-y-1">
+                <DialogTitle className="text-2xl font-display font-black text-text-primary">Payment করুন</DialogTitle>
+                <DialogDescription className="text-text-secondary font-bold">
+                  {selectedExamId ? 'Selected exam purchase' : 'Full bundle purchase'} • <span className="text-primary">Amount: ৳{Math.floor(paymentAmountInPaisa / 100)}</span>
+                </DialogDescription>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('bkash')}
+                    className={cn(
+                      "flex-1 flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all",
+                      paymentMethod === 'bkash' ? "border-primary bg-primary/5 text-primary" : "border-border/40 bg-bg-surface/50 text-text-secondary hover:border-border"
+                    )}
+                  >
+                    <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", paymentMethod === 'bkash' ? "bg-primary text-white" : "bg-bg-card")}>
+                      <Smartphone className="w-5 h-5" />
+                    </div>
+                    <span className="font-black text-sm uppercase tracking-wider">bKash</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('nagad')}
+                    className={cn(
+                      "flex-1 flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all",
+                      paymentMethod === 'nagad' ? "border-primary bg-primary/5 text-primary" : "border-border/40 bg-bg-surface/50 text-text-secondary hover:border-border"
+                    )}
+                  >
+                    <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", paymentMethod === 'nagad' ? "bg-primary text-white" : "bg-bg-card")}>
+                      <Smartphone className="w-5 h-5" />
+                    </div>
+                    <span className="font-black text-sm uppercase tracking-wider">Nagad</span>
+                  </button>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-bg-surface/50 border border-border/40 space-y-2">
+                  <div className="flex justify-between items-center text-xs font-black text-text-secondary uppercase tracking-widest">
+                    <span>Send Money Number</span>
+                    <span className="text-accent">Official</span>
+                  </div>
+                  <div className="text-xl font-display font-black text-text-primary tracking-widest text-center py-2">
+                    {paymentInstructions?.[paymentMethod]?.number || '01581782193'}
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="relative">
+                    <input
+                      className="w-full bg-bg-surface/50 border border-border/40 rounded-2xl py-3.5 px-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-all shadow-sm"
+                      placeholder="Transaction ID"
+                      value={transactionId}
+                      onChange={(e) => setTransactionId(e.target.value)}
+                    />
+                  </div>
+                  <div className="relative">
+                    <input
+                      className="w-full bg-bg-surface/50 border border-border/40 rounded-2xl py-3.5 px-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-all shadow-sm"
+                      placeholder="Sender Number (Bkash/Nagad Number)"
+                      value={senderNumber}
+                      onChange={(e) => setSenderNumber(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <Button variant="ghost" className="flex-1 rounded-2xl h-12 font-bold" onClick={() => setIsPaymentModalOpen(false)}>
+                  Cancel
                 </Button>
                 <Button
-                  type="button"
-                  variant={paymentMethod === 'nagad' ? 'primary' : 'outline'}
-                  onClick={() => setPaymentMethod('nagad')}
+                  className="flex-[2] bg-primary hover:bg-primary-light text-white font-black rounded-2xl h-12 shadow-xl shadow-primary/20"
+                  onClick={() => {
+                    if (!transactionId || !senderNumber) {
+                      toast.error('Transaction ID এবং Sender Number দিন');
+                      return;
+                    }
+                    paymentMutation.mutate();
+                  }}
+                  disabled={paymentMutation.isPending}
                 >
-                  <Smartphone className="w-4 h-4 mr-1" /> Nagad
+                  {paymentMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : "Payment Submit"}
                 </Button>
               </div>
-              <p className="text-xs text-text-secondary">
-                Send Money: <span className="font-bold">{paymentInstructions?.[paymentMethod]?.number || '01XXXXXXXXX'}</span>
-              </p>
-              <input
-                className="w-full bg-bg-surface border border-border rounded-xl py-2 px-4 text-sm"
-                placeholder="Transaction ID"
-                value={transactionId}
-                onChange={(e) => setTransactionId(e.target.value)}
-              />
-              <input
-                className="w-full bg-bg-surface border border-border rounded-xl py-2 px-4 text-sm"
-                placeholder="Sender Number"
-                value={senderNumber}
-                onChange={(e) => setSenderNumber(e.target.value)}
-              />
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsPaymentModalOpen(false)}>
-                Cancel
-              </Button>
-              <Button
-                onClick={() => {
-                  if (!transactionId || !senderNumber) {
-                    toast.error('Transaction ID এবং Sender Number দিন');
-                    return;
-                  }
-                  paymentMutation.mutate();
-                }}
-                disabled={paymentMutation.isPending}
-              >
-                {paymentMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                Submit Payment
-              </Button>
-            </DialogFooter>
           </DialogContent>
         </Dialog>
-      </div>
+      </motion.div>
     </DashboardLayout>
   );
 }

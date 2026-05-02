@@ -52,8 +52,8 @@ export default function ModelTestAnalyticsPage() {
             </Link>
           </Button>
           <div>
-            <h1 className="text-3xl font-display font-bold tracking-tight flex items-center gap-2">
-              <LineChartIcon className="w-8 h-8 text-accent" /> Model Test Analytics
+            <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight flex items-center gap-2">
+              <LineChartIcon className="w-6 h-6 sm:w-8 sm:h-8 text-accent" /> Model Test Analytics
             </h1>
             <p className="text-text-secondary mt-1 flex items-center gap-1">
               <FileBadge className="w-4 h-4" /> Your performance history in this model test

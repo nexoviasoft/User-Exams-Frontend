@@ -7,9 +7,10 @@ interface StatCounterProps {
   label: string;
   prefix?: string;
   suffix?: string;
+  icon?: React.ReactNode;
 }
 
-export const StatCounter = ({ value, label, prefix = "", suffix = "" }: StatCounterProps) => {
+export const StatCounter = ({ value, label, prefix = "", suffix = "", icon }: StatCounterProps) => {
   const [count, setCount] = useState(0);
 
   useEffect(() => {
@@ -32,11 +33,12 @@ export const StatCounter = ({ value, label, prefix = "", suffix = "" }: StatCoun
   }, [value]);
 
   return (
-    <div className="text-center">
-      <div className="text-3xl md:text-4xl font-display font-extrabold text-text-primary">
+    <div className="flex flex-col items-center justify-center text-center p-4">
+      {icon && <div className="flex justify-center">{icon}</div>}
+      <div className="text-3xl md:text-5xl font-display font-extrabold text-white drop-shadow-sm">
         {prefix}{count.toLocaleString()}{suffix}
       </div>
-      <div className="text-sm text-text-secondary mt-1 uppercase tracking-wider font-medium">{label}</div>
+      <div className="text-sm md:text-base text-text-secondary mt-2 uppercase tracking-widest font-bold">{label}</div>
     </div>
   );
 };

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -33,29 +33,34 @@ type MenuItem = {
 
 export const Sidebar = ({ onAction }: { onAction?: () => void }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
   const { role } = useAuth();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const menuItems: Record<'student' | 'teacher' | 'admin', MenuItem[]> = {
     student: [
       { name: 'Dashboard', icon: LayoutDashboard, path: '/student/dashboard' },
-      { name: 'সব Exam', icon: BookOpen, path: '/student/exams' },
-      { name: 'My Purchases', icon: CreditCard, path: '/student/purchases' },
-      { name: 'আমার Results', icon: PieChart, path: '/student/history' },
+      { name: 'Browse Exams', icon: BookOpen, path: '/student/exams' },
+      { name: 'My Library', icon: CreditCard, path: '/student/purchases' },
+      { name: 'Exam Results', icon: PieChart, path: '/student/history' },
       { name: 'Payment History', icon: CreditCard, path: '/student/payments' },
-      { name: 'Profile', icon: Users, path: '/student/profile' },
+      { name: 'My Profile', icon: Users, path: '/student/profile' },
     ],
     teacher: [
       { name: 'Dashboard', icon: LayoutDashboard, path: '/teacher/dashboard' },
       { name: 'Question Banks', icon: Database, path: '/teacher/question-banks' },
       { name: 'Subjects', icon: BookOpen, path: '/teacher/subjects' },
       { name: 'Model Tests', icon: FileText, path: '/teacher/model-tests' },
-      { name: 'Question তৈরি', icon: PlusCircle, path: '/teacher/create-question' },
-      { name: 'আমার Exams', icon: FileText, path: '/teacher/exams' },
-      { name: 'Exam তৈরি', icon: PlusCircle, path: '/teacher/create-exam' },
+      { name: 'Create Question', icon: PlusCircle, path: '/teacher/create-question' },
+      { name: 'My Exams', icon: FileText, path: '/teacher/exams' },
+      { name: 'Create Exam', icon: PlusCircle, path: '/teacher/create-exam' },
       { name: 'Analytics', icon: PieChart, path: '/teacher/analytics' },
       { name: 'Earnings', icon: Banknote, path: '/teacher/earnings' },
-      { name: 'Profile', icon: Users, path: '/teacher/profile' },
+      { name: 'My Profile', icon: Users, path: '/teacher/profile' },
     ],
     admin: [
       { name: 'Dashboard', icon: LayoutDashboard, path: '/admin/dashboard' },
@@ -69,7 +74,7 @@ export const Sidebar = ({ onAction }: { onAction?: () => void }) => {
     ],
   };
 
-  const currentMenu = role ? menuItems[role as keyof typeof menuItems] : [];
+  const currentMenu = (mounted && role) ? menuItems[role as keyof typeof menuItems] : [];
 
   return (
     <motion.aside

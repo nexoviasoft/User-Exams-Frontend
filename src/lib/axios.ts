@@ -3,7 +3,7 @@ import { store } from '@/store';
 import { logout } from '@/store/slices/authSlice';
 
 const axiosInstance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001',
+  baseURL: 'https://polyexamapi.vercel.app',
   headers: {
     'Content-Type': 'application/json',
   },

@@ -106,7 +106,7 @@ export const Hero = () => {
         <motion.div
           initial={{ opacity: 0, scale: 0.9, rotateX: 15, rotateY: -15 }}
           animate={{ opacity: 1, scale: 1, rotateX: 0, rotateY: 0 }}
-          transition={{ duration: 1, delay: 0.2, type: "spring", stiffness: 100 }}
+          transition={{ duration: 1, delay: 0.2, type: "spring" as const, stiffness: 100 }}
           style={{ perspective: 1000 }}
           className="hidden lg:flex justify-center items-center relative"
         >

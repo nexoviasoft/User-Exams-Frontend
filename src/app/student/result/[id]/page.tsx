@@ -47,7 +47,7 @@ const itemVariants = {
     opacity: 1,
     y: 0,
     transition: {
-      type: "spring",
+      type: "spring" as const,
       stiffness: 100,
       damping: 15
     }
@@ -152,10 +152,8 @@ export default function ResultPage() {
 
         {/* Top Header Actions */}
         <div className="flex items-center justify-between relative z-10">
-          <Button variant="ghost" asChild className="rounded-2xl w-12 h-12 bg-bg-card/50 backdrop-blur-md border border-border/50 hover:bg-bg-card">
-            <Link href="/student/dashboard">
-              <ArrowLeft className="w-5 h-5" />
-            </Link>
+          <Button variant="ghost" render={<Link href="/student/dashboard" />} className="rounded-2xl w-12 h-12 bg-bg-card/50 backdrop-blur-md border border-border/50 hover:bg-bg-card">
+            <ArrowLeft className="w-5 h-5" />
           </Button>
           <div className="flex gap-3">
             <Button variant="outline" className="rounded-2xl border-border/50 bg-bg-card/50 hover:bg-bg-card font-black text-xs" onClick={() => window.print()}>

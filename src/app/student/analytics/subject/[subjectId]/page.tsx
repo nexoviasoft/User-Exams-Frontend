@@ -46,10 +46,8 @@ export default function SubjectAnalyticsPage() {
     <DashboardLayout>
       <div className="max-w-4xl mx-auto space-y-8 pb-20">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" asChild className="rounded-full hover:bg-bg-surface">
-            <Link href="/student/browse">
-              <ArrowLeft className="w-5 h-5" />
-            </Link>
+          <Button variant="ghost" size="icon" render={<Link href="/student/browse" />} className="rounded-full hover:bg-bg-surface">
+            <ArrowLeft className="w-5 h-5" />
           </Button>
           <div>
             <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight flex items-center gap-2">
@@ -104,7 +102,7 @@ export default function SubjectAnalyticsPage() {
                       contentStyle={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '8px' }}
                       labelStyle={{ color: 'var(--text-secondary)', marginBottom: '4px' }}
                       itemStyle={{ fontWeight: 'bold' }}
-                      formatter={(value: number, name: string, props: any) => [`${value}%`, props.payload.title]}
+                      formatter={(value: any, name: any, props: any) => [`${value}%`, props.payload.title]}
                     />
                     <Line type="monotone" dataKey="percentage" stroke="var(--primary)" strokeWidth={3} dot={{ r: 4, fill: 'var(--primary)', strokeWidth: 0 }} activeDot={{ r: 6 }} />
                   </LineChart>

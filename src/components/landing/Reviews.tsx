@@ -77,7 +77,7 @@ export const Reviews = () => {
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.7, delay: idx * 0.2, type: "spring", stiffness: 100 }}
+              transition={{ duration: 0.7, delay: idx * 0.2, type: "spring" as const, stiffness: 100 }}
               className="p-8 rounded-3xl bg-white/[0.02] border border-white/10 backdrop-blur-xl hover:bg-white/[0.05] hover:border-primary/50 transition-all duration-500 relative flex flex-col group shadow-lg hover:shadow-[0_0_40px_rgba(0,82,204,0.15)] hover:-translate-y-2 overflow-hidden"
             >
               <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-30 transition-opacity duration-500">

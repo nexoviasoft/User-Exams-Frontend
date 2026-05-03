@@ -44,7 +44,7 @@ const itemVariants = {
     opacity: 1,
     y: 0,
     transition: {
-      type: "spring",
+      type: "spring" as const,
       stiffness: 100,
       damping: 15
     }
@@ -155,7 +155,7 @@ export default function TeacherExamsPage() {
                     <motion.div
                       layoutId="activeExamTab"
                       className="absolute inset-0 bg-primary rounded-[14px] shadow-lg shadow-primary/20"
-                      transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                      transition={{ type: "spring" as const, bounce: 0.2, duration: 0.6 }}
                     />
                   )}
                   <span className="relative z-10">{tab}</span>

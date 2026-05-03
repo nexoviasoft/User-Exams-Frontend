@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { Suspense, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import axiosInstance from '@/lib/axios';
@@ -42,7 +42,7 @@ const itemVariants = {
     opacity: 1,
     y: 0,
     transition: {
-      type: "spring",
+      type: "spring" as const,
       stiffness: 100,
       damping: 15
     }
@@ -72,7 +72,7 @@ type AnalyticsResponse = {
 
 const COLORS = ['#0052CC', '#FF4D4F'];
 
-export default function AnalyticsPage() {
+function AnalyticsPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const selectedExamId = searchParams.get('id') || '';
@@ -330,5 +330,21 @@ export default function AnalyticsPage() {
         )}
       </motion.div>
     </DashboardLayout>
+  );
+}
+
+export default function AnalyticsPage() {
+  return (
+    <Suspense
+      fallback={
+        <DashboardLayout>
+          <div className="flex min-h-[40vh] items-center justify-center">
+            <Loader2 className="h-10 w-10 animate-spin text-primary/30" />
+          </div>
+        </DashboardLayout>
+      }
+    >
+      <AnalyticsPageContent />
+    </Suspense>
   );
 }

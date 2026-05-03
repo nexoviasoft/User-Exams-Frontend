@@ -36,7 +36,7 @@ const itemVariants = {
     y: 0,
     opacity: 1,
     transition: {
-      type: "spring",
+      type: "spring" as const,
       stiffness: 100,
       damping: 12
     }
@@ -81,10 +81,8 @@ export default function ModelTestLeaderboardPage() {
 
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
           <div className="flex items-center gap-5">
-            <Button variant="ghost" size="icon" asChild className="rounded-2xl w-12 h-12 bg-bg-card/50 backdrop-blur-md border border-border/50 hover:bg-bg-card transition-all">
-              <Link href="/student/exams">
-                <ArrowLeft className="w-5 h-5" />
-              </Link>
+            <Button variant="ghost" size="icon" render={<Link href="/student/dashboard" />} className="rounded-2xl w-12 h-12 bg-bg-card/50 backdrop-blur-md border border-border/50 hover:bg-bg-card transition-all">
+              <ArrowLeft className="w-5 h-5" />
             </Button>
             <div className="space-y-1">
               <div className="flex items-center gap-2 mb-1">

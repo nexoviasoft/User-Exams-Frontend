@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -46,7 +46,7 @@ const containerVariants = {
 
 const itemVariants = {
   hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 100, damping: 15 } }
+  visible: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 100, damping: 15 } }
 };
 
 interface QuestionBank {
@@ -56,7 +56,7 @@ interface QuestionBank {
   modelTest?: { id: string; name: string };
 }
 
-export default function CreateQuestionPage() {
+function CreateQuestionPageContent() {
   const searchParams = useSearchParams();
   const bankIdFromUrl = searchParams.get('bankId') || '';
   
@@ -615,5 +615,21 @@ export default function CreateQuestionPage() {
         </Dialog>
       </motion.div>
     </DashboardLayout>
+  );
+}
+
+export default function CreateQuestionPage() {
+  return (
+    <Suspense
+      fallback={
+        <DashboardLayout>
+          <div className="flex min-h-[40vh] items-center justify-center">
+            <Loader2 className="h-10 w-10 animate-spin text-primary/30" />
+          </div>
+        </DashboardLayout>
+      }
+    >
+      <CreateQuestionPageContent />
+    </Suspense>
   );
 }

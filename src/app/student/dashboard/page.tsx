@@ -230,7 +230,7 @@ export default function StudentDashboard() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="max-w-full mx-auto space-y-8 relative px-4 pb-20"
+        className="max-w-full mx-auto space-y-6 md:space-y-8 relative px-4 pb-20"
       >
         {/* Background Decorative Glow */}
         <div className="absolute -top-24 -right-24 w-96 h-96 bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
@@ -261,12 +261,12 @@ export default function StudentDashboard() {
         </motion.div>
 
         {/* Stats Registry */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 relative z-10">
+        <div className="grid gap-3 md:gap-4 grid-cols-2 lg:grid-cols-4 relative z-10">
           {stats.map((stat) => (
             <motion.div key={stat.name} variants={itemVariants} whileHover={{ y: -5 }}>
               <Card className="group h-full border-border/50 bg-bg-card/40 backdrop-blur-xl hover:bg-bg-card/70 transition-all duration-500 rounded-[24px] overflow-hidden border-2 shadow-xl relative">
                 <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full blur-3xl -mr-12 -mt-12 group-hover:bg-primary/10 transition-colors" />
-                <CardContent className="p-5 relative z-10">
+                <CardContent className="p-4 md:p-5 relative z-10">
                   <div className="flex items-center justify-between mb-4">
                     <div className={cn("p-2.5 rounded-xl transition-all duration-300 group-hover:scale-110 shadow-inner", stat.bg)}>
                       <stat.icon className={cn("h-4 w-4", stat.color)} />
@@ -289,7 +289,7 @@ export default function StudentDashboard() {
           {/* Main Feed - Activity Audit */}
           <motion.div variants={itemVariants} className="lg:col-span-7">
             <Card className="border-border/50 bg-bg-card/40 backdrop-blur-xl rounded-[32px] overflow-hidden border-2 shadow-2xl">
-              <CardHeader className="p-6 pb-2 border-b border-border/10 flex items-center justify-between">
+              <CardHeader className="p-4 md:p-6 pb-2 border-b border-border/10 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="p-2.5 rounded-xl bg-accent/10 text-accent">
                     <Activity className="w-5 h-5" />
@@ -315,7 +315,7 @@ export default function StudentDashboard() {
                    ) : recentActivity.length > 0 ? (
                       recentActivity.map((activity) => (
                         <Link key={activity.id} href={`/student/result/${activity.id}`}>
-                           <div className="p-5 flex items-center justify-between hover:bg-white/40 transition-all group">
+                           <div className="p-4 md:p-5 flex items-center justify-between hover:bg-white/40 transition-all group">
                               <div className="flex items-center gap-4">
                                  <div className={cn("w-12 h-12 rounded-2xl flex flex-col items-center justify-center font-black transition-transform group-hover:scale-105 shadow-inner", activity.bgColor)}>
                                     <span className={cn("text-xs", activity.color)}>{activity.score}</span>

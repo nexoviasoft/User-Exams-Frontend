@@ -162,7 +162,7 @@ export default function StudentHistoryPage() {
               Performance Hub
             </Badge>
           </div>
-          <h1 className="text-3xl md:text-5xl font-display font-black tracking-tight text-text-primary leading-tight">
+          <h1 className="text-2xl md:text-5xl font-display font-black tracking-tight text-text-primary leading-tight">
             My Results <span className="text-primary">&</span> History
           </h1>
           <p className="text-text-secondary text-lg max-w-2xl font-medium">

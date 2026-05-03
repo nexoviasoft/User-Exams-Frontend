@@ -313,7 +313,7 @@ export default function TakeExamPage() {
   if (isSessionError || !session || questions.length === 0) {
     return (
       <div className="min-h-screen bg-bg-dark text-text-primary flex items-center justify-center p-6">
-        <div className="text-center space-y-6 p-10 rounded-[32px] bg-bg-card/40 border border-border/50 backdrop-blur-xl max-w-md">
+        <div className="text-center space-y-6 p-10 rounded-[24px] md:rounded-[32px] bg-bg-card/40 border border-border/50 backdrop-blur-xl max-w-md">
           <div className="w-20 h-20 bg-danger/10 rounded-3xl flex items-center justify-center mx-auto text-danger">
             <AlertTriangle className="w-10 h-10" />
           </div>
@@ -380,7 +380,7 @@ export default function TakeExamPage() {
         </div>
       </header>
 
-      <main className="flex-1 max-w-7xl mx-auto w-full p-4 md:p-6 lg:p-8">
+      <main className="flex-1 max-w-7xl mx-auto w-full p-3 md:p-6 lg:p-8">
         <div className="grid grid-cols-1 lg:grid-cols-[80px_1fr] gap-6 items-start">
           {/* Compact Sidebar Navigation */}
           <aside className="hidden lg:block sticky top-24">
@@ -416,7 +416,7 @@ export default function TakeExamPage() {
             <motion.section 
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="rounded-3xl border border-border/40 bg-bg-card/40 backdrop-blur-xl p-5 md:p-6 relative overflow-hidden group"
+              className="rounded-3xl border border-border/40 bg-bg-card/40 backdrop-blur-xl p-4 md:p-6 relative overflow-hidden group"
             >
               <div className="flex items-center justify-between gap-4 mb-4">
                 <div className="flex items-center gap-3">
@@ -455,7 +455,7 @@ export default function TakeExamPage() {
                   variants={itemVariants}
                   id={`question-${question.id}`}
                   className={cn(
-                    'w-full space-y-4 rounded-[32px] border bg-bg-card/30 backdrop-blur-xl p-5 md:p-6 transition-all duration-500 hover:border-primary/20',
+                    'w-full space-y-4 rounded-[24px] md:rounded-[32px] border bg-bg-card/30 backdrop-blur-xl p-4 md:p-6 transition-all duration-500 hover:border-primary/20',
                     answers[question.id] ? 'border-primary/30 bg-bg-card/50 shadow-lg shadow-primary/[0.03]' : 'border-border/40'
                   )}
                 >
@@ -542,7 +542,7 @@ export default function TakeExamPage() {
         {isSubmitModalOpen && (
           <Dialog open={isSubmitModalOpen} onOpenChange={setIsSubmitModalOpen}>
             <DialogContent className="bg-bg-card/95 backdrop-blur-2xl border-border/40 max-w-[92vw] sm:max-w-[440px] p-0 overflow-hidden rounded-[40px] shadow-2xl">
-              <div className="p-8 space-y-8">
+              <div className="p-6 md:p-8 space-y-6 md:space-y-8">
                 <div className="flex flex-col items-center text-center space-y-5">
                   <div className="w-16 h-16 rounded-3xl bg-warning/10 flex items-center justify-center text-warning shadow-inner border border-warning/20">
                     <AlertTriangle className="w-8 h-8" />

@@ -157,7 +157,7 @@ export default function StudentPurchasesPage() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="space-y-10 max-w-6xl mx-auto pb-24 px-4 relative"
+        className="space-y-6 md:space-y-10 max-w-6xl mx-auto pb-24 px-4 relative"
       >
         {/* Decorative Background Glows */}
         <div className="absolute -top-24 -right-24 w-96 h-96 bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
@@ -170,7 +170,7 @@ export default function StudentPurchasesPage() {
                 My Library
               </Badge>
             </div>
-            <h1 className="text-3xl md:text-5xl font-display font-black tracking-tight text-text-primary leading-tight flex items-center gap-4">
+            <h1 className="text-2xl md:text-5xl font-display font-black tracking-tight text-text-primary leading-tight flex items-center gap-4">
               আমার <span className="text-primary">কেনা</span> কোর্সসমূহ <Library className="w-8 h-8 md:w-12 md:h-12 text-primary/40" />
             </h1>
             <p className="text-text-secondary text-lg max-w-2xl font-medium">

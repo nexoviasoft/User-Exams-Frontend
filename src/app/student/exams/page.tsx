@@ -505,7 +505,7 @@ export default function ExamListPage() {
             }
           }}
         >
-          <DialogContent className="bg-bg-card/90 backdrop-blur-2xl border-border/50 sm:max-w-[480px] rounded-[32px] overflow-hidden p-0">
+          <DialogContent className="bg-bg-card/90 backdrop-blur-2xl border-border/50 sm:max-w-[480px] rounded-[24px] md:rounded-[32px] overflow-hidden p-0">
             <div className="relative h-24 bg-gradient-to-r from-primary/20 to-accent/20">
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-lg">
@@ -514,7 +514,7 @@ export default function ExamListPage() {
               </div>
             </div>
 
-            <div className="p-8 space-y-6">
+            <div className="p-5 md:p-8 space-y-6">
               <div className="text-center space-y-1">
                 <DialogTitle className="text-2xl font-display font-black text-text-primary">Make Payment</DialogTitle>
                 <DialogDescription className="text-text-secondary font-bold">
@@ -604,7 +604,7 @@ export default function ExamListPage() {
         </Dialog>
 
         <Dialog open={!!selectedTeacher} onOpenChange={(open) => !open && setSelectedTeacher(null)}>
-          <DialogContent className="bg-bg-card/90 backdrop-blur-2xl border-border/50 sm:max-w-[480px] rounded-[32px] overflow-hidden p-0">
+          <DialogContent className="bg-bg-card/90 backdrop-blur-2xl border-border/50 sm:max-w-[480px] rounded-[24px] md:rounded-[32px] overflow-hidden p-0">
             <div className="relative h-32 bg-gradient-to-r from-primary/20 to-accent/20">
               <div className="absolute -bottom-12 left-8">
                 <div className="w-24 h-24 rounded-3xl border-4 border-bg-card bg-bg-card shadow-2xl overflow-hidden">
@@ -625,7 +625,7 @@ export default function ExamListPage() {
                 <p className="text-primary font-bold text-sm">{selectedTeacher?.platformName || 'Independent Instructor'}</p>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                 <div className="p-4 rounded-2xl bg-bg-surface/50 border border-border/40 space-y-1">
                   <div className="text-[10px] uppercase font-black text-text-secondary tracking-widest">Education</div>
                   <div className="text-sm font-bold text-text-primary">{selectedTeacher?.education || 'N/A'}</div>

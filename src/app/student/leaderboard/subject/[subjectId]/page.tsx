@@ -212,10 +212,10 @@ export default function SubjectLeaderboardPage() {
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="bg-bg-surface/30 text-text-secondary text-[10px] sm:text-[11px] uppercase tracking-[0.2em] font-black border-b border-border/40">
-                        <th className="px-8 py-6 text-center w-24">Rank</th>
-                        <th className="px-6 py-6">Student Champion</th>
-                        <th className="px-6 py-6 text-center">Final Score</th>
-                        <th className="px-8 py-6 text-center">Efficiency</th>
+                        <th className="px-4 md:px-8 py-4 md:py-6 text-center w-16 md:w-24">Rank</th>
+                        <th className="px-3 md:px-6 py-4 md:py-6">Student Champion</th>
+                        <th className="px-3 md:px-6 py-4 md:py-6 text-center">Final Score</th>
+                        <th className="px-4 md:px-8 py-4 md:py-6 text-center">Efficiency</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border/20">
@@ -225,7 +225,7 @@ export default function SubjectLeaderboardPage() {
                           whileHover={{ backgroundColor: "rgba(255,255,255,0.02)" }}
                           className="transition-colors group"
                         >
-                          <td className="px-8 py-6 text-center">
+                          <td className="px-4 md:px-8 py-4 md:py-6 text-center">
                             <div className={cn(
                               "w-10 h-10 sm:w-12 sm:h-12 mx-auto rounded-2xl flex items-center justify-center font-black text-xs sm:text-sm bg-gradient-to-br transition-transform group-hover:scale-110",
                               getRankStyle(entry.rank)
@@ -233,7 +233,7 @@ export default function SubjectLeaderboardPage() {
                               {entry.rank <= 3 ? <Medal className="w-5 h-5 sm:w-6 sm:h-6" /> : entry.rank}
                             </div>
                           </td>
-                          <td className="px-6 py-6">
+                          <td className="px-3 md:px-6 py-4 md:py-6">
                             <div className="flex items-center gap-4">
                               <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20 font-black text-xs">
                                 {entry.studentName.charAt(0).toUpperCase()}
@@ -247,12 +247,12 @@ export default function SubjectLeaderboardPage() {
                               </div>
                             </div>
                           </td>
-                          <td className="px-6 py-6 text-center">
+                          <td className="px-3 md:px-6 py-4 md:py-6 text-center">
                             <div className="inline-flex items-center justify-center px-4 py-2 rounded-2xl bg-success/10 text-success border border-success/20 font-black text-sm sm:text-xl">
                               {entry.score}
                             </div>
                           </td>
-                          <td className="px-8 py-6 text-center">
+                          <td className="px-4 md:px-8 py-4 md:py-6 text-center">
                             <div className="flex flex-col items-center gap-1">
                               <div className="flex items-center gap-1.5 text-text-primary font-black text-xs sm:text-sm">
                                 <Clock className="w-3.5 h-3.5 text-accent" />

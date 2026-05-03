@@ -79,8 +79,8 @@ export const Sidebar = ({ onAction }: { onAction?: () => void }) => {
   return (
     <motion.aside
       initial={false}
-      animate={{ width: isCollapsed ? 80 : 260 }}
-      className="h-screen bg-bg-card border-r border-border flex flex-col sticky top-0 z-50 overflow-hidden"
+      animate={{ width: isCollapsed ? 80 : 280 }}
+      className="h-screen bg-bg-card border-r border-border flex flex-col sticky top-0 z-50 overflow-hidden w-[280px] lg:w-auto"
     >
       {/* Logo Section */}
       <div className="h-16 flex items-center px-6 border-b border-border">

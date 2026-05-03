@@ -108,7 +108,7 @@ export default function StudentProfilePage() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="max-w-5xl mx-auto space-y-6 pb-20 px-4 relative"
+        className="max-w-5xl mx-auto space-y-4 md:space-y-6 pb-20 px-4 relative"
       >
         {/* Decorative Background Glows */}
         <div className="absolute -top-12 -right-12 w-64 h-64 bg-primary/5 rounded-full blur-[80px] pointer-events-none" />
@@ -119,7 +119,7 @@ export default function StudentProfilePage() {
               Account Settings
             </Badge>
           </div>
-          <h1 className="text-2xl md:text-3xl font-display font-black tracking-tight text-text-primary leading-tight flex items-center gap-3">
+          <h1 className="text-xl md:text-3xl font-display font-black tracking-tight text-text-primary leading-tight flex items-center gap-3">
             My <span className="text-primary">Profile</span> <User className="w-6 h-6 md:w-8 md:h-8 text-primary/40" />
           </h1>
           <p className="text-text-secondary text-sm max-w-2xl font-medium">

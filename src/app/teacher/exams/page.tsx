@@ -92,13 +92,41 @@ export default function TeacherExamsPage() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => (await axiosInstance.delete(`/exams/${id}`)).data,
+    mutationFn: async (id: string) => {
+      const deleteCandidates: Array<{ method: 'delete' | 'patch'; url: string }> = [
+        { method: 'delete', url: `/exams/${id}` },
+        { method: 'delete', url: `/exams/${id}/delete` },
+        { method: 'patch', url: `/exams/${id}/delete` },
+        { method: 'delete', url: `/exams/delete/${id}` },
+      ];
+
+      let lastError: unknown = null;
+      for (const candidate of deleteCandidates) {
+        try {
+          const response = await axiosInstance.request({
+            method: candidate.method,
+            url: candidate.url,
+          });
+          return response.data;
+        } catch (error: any) {
+          const status = error?.response?.status;
+          // Keep trying if route is missing or method is not allowed.
+          if (status === 404 || status === 405) {
+            lastError = error;
+            continue;
+          }
+          throw error;
+        }
+      }
+
+      throw lastError;
+    },
     onSuccess: async () => {
       toast.success('Exam deleted');
       await refetch();
     },
     onError: () => {
-      toast.error('Delete failed');
+      toast.error('Delete endpoint not found. Please verify backend route.');
     },
   });
 

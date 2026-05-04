@@ -91,44 +91,7 @@ export default function TeacherExamsPage() {
     },
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const deleteCandidates: Array<{ method: 'delete' | 'patch'; url: string }> = [
-        { method: 'delete', url: `/exams/${id}` },
-        { method: 'delete', url: `/exams/${id}/delete` },
-        { method: 'patch', url: `/exams/${id}/delete` },
-        { method: 'delete', url: `/exams/delete/${id}` },
-      ];
-
-      let lastError: unknown = null;
-      for (const candidate of deleteCandidates) {
-        try {
-          const response = await axiosInstance.request({
-            method: candidate.method,
-            url: candidate.url,
-          });
-          return response.data;
-        } catch (error: any) {
-          const status = error?.response?.status;
-          // Keep trying if route is missing or method is not allowed.
-          if (status === 404 || status === 405) {
-            lastError = error;
-            continue;
-          }
-          throw error;
-        }
-      }
-
-      throw lastError;
-    },
-    onSuccess: async () => {
-      toast.success('Exam deleted');
-      await refetch();
-    },
-    onError: () => {
-      toast.error('Delete endpoint not found. Please verify backend route.');
-    },
-  });
+  const isDeleteEnabled = false;
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, title }: { id: string; title: string }) =>
@@ -344,12 +307,15 @@ export default function TeacherExamsPage() {
                                    variant="ghost"
                                    size="icon"
                                    className="h-10 w-10 rounded-xl hover:bg-red-500/10 hover:text-red-600 text-text-secondary transition-all"
-                                   title="Delete"
-                                   disabled={deleteMutation.isPending}
+                                   title={isDeleteEnabled ? 'Delete' : 'Delete (coming soon)'}
+                                   disabled={!isDeleteEnabled}
                                    onClick={() => {
+                                     if (!isDeleteEnabled) {
+                                       toast.info('Delete is not available yet');
+                                       return;
+                                     }
                                      const confirmed = window.confirm('Are you sure you want to delete this exam?');
                                      if (!confirmed) return;
-                                     deleteMutation.mutate(exam.id);
                                    }}
                                  >
                                    <Trash2 className="w-4 h-4" />

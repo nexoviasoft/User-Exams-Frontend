@@ -15,11 +15,9 @@ import {
   Loader2,
   Calendar,
   FileText,
-  Filter,
-  ArrowRight,
-  Sparkles,
-  Zap,
-  Users
+  Users,
+  Undo2,
+  Trash2
 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -79,6 +77,28 @@ export default function TeacherExamsPage() {
     },
     onError: () => {
       toast.error('Publishing failed');
+    },
+  });
+
+  const unpublishMutation = useMutation({
+    mutationFn: async (id: string) => (await axiosInstance.patch(`/exams/${id}/unpublish`)).data,
+    onSuccess: async () => {
+      toast.success('Exam moved to draft');
+      await refetch();
+    },
+    onError: () => {
+      toast.error('Unpublish failed');
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => (await axiosInstance.delete(`/exams/${id}`)).data,
+    onSuccess: async () => {
+      toast.success('Exam deleted');
+      await refetch();
+    },
+    onError: () => {
+      toast.error('Delete failed');
     },
   });
 
@@ -273,12 +293,39 @@ export default function TeacherExamsPage() {
                                        size="icon"
                                        className="h-10 w-10 rounded-xl hover:bg-success/10 hover:text-success text-text-secondary transition-all"
                                        title="Go Live"
+                                       disabled={publishMutation.isPending}
                                        onClick={() => publishMutation.mutate(exam.id)}
                                      >
                                        <Rocket className="w-4 h-4" />
                                      </Button>
                                    </>
                                  )}
+                                 {exam.status === 'published' && (
+                                   <Button
+                                     variant="ghost"
+                                     size="icon"
+                                     className="h-10 w-10 rounded-xl hover:bg-amber-500/10 hover:text-amber-600 text-text-secondary transition-all"
+                                     title="Unpublish"
+                                     disabled={unpublishMutation.isPending}
+                                     onClick={() => unpublishMutation.mutate(exam.id)}
+                                   >
+                                     <Undo2 className="w-4 h-4" />
+                                   </Button>
+                                 )}
+                                 <Button
+                                   variant="ghost"
+                                   size="icon"
+                                   className="h-10 w-10 rounded-xl hover:bg-red-500/10 hover:text-red-600 text-text-secondary transition-all"
+                                   title="Delete"
+                                   disabled={deleteMutation.isPending}
+                                   onClick={() => {
+                                     const confirmed = window.confirm('Are you sure you want to delete this exam?');
+                                     if (!confirmed) return;
+                                     deleteMutation.mutate(exam.id);
+                                   }}
+                                 >
+                                   <Trash2 className="w-4 h-4" />
+                                 </Button>
                                  <Link href={`/teacher/analytics?id=${exam.id}`}>
                                    <Button 
                                     variant="ghost" 
